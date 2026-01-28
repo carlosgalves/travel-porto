@@ -5,6 +5,8 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { useTranslation } from '../../lib/i18n';
 import { useMapContext } from '../../contexts/MapContext';
 import BusStops from './BusStops';
 import type { BusStop } from '../../api/types';
@@ -78,12 +80,16 @@ interface MapProps {
   className?: string;
 }
 
+type ErrorType = 'locationError' | 'geolocationNotSupported' | null;
+
 export default function Map({ className }: MapProps) {
   const { theme } = useTheme();
+  const { language } = useLanguage();
+  const t = useTranslation(language);
   const { mapInstance, setMapInstance, setUserPosition, setHasLocationPermission, setIsCenteredOnUser, userPosition } = useMapContext();
   const [position, setPosition] = useState<[number, number] | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorType>(null);
   const [selectedStop, setSelectedStop] = useState<BusStop | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [bearing, setBearing] = useState<number | null>(null);
@@ -130,7 +136,7 @@ export default function Map({ className }: MapProps) {
         },
         (err) => {
           console.error('Geolocation error:', err);
-          setError('Unable to retrieve your location.');
+          setError('locationError');
           setPosition(PORTO_CENTER);
           setHasLocationPermission(false);
           setLoading(false);
@@ -144,7 +150,7 @@ export default function Map({ className }: MapProps) {
         }
       };
     } else {
-      setError('Geolocation is not supported by your browser.');
+      setError('geolocationNotSupported');
       setPosition(PORTO_CENTER);
       setHasLocationPermission(false);
       setLoading(false);
@@ -155,8 +161,8 @@ export default function Map({ className }: MapProps) {
     return (
       <div className={`flex items-center justify-center h-full ${className || ''}`}>
         <div className="text-center">
-          <p className="text-lg">Loading map...</p>
-          <p className="text-sm text-muted-foreground">Getting your location...</p>
+          <p className="text-lg">{t('map.loading')}</p>
+          <p className="text-sm text-muted-foreground">{t('map.gettingLocation')}</p>
         </div>
       </div>
     );
@@ -166,17 +172,23 @@ export default function Map({ className }: MapProps) {
     return (
       <div className={`flex items-center justify-center h-full ${className || ''}`}>
         <div className="text-center">
-          <p className="text-lg text-destructive">Unable to load map</p>
+          <p className="text-lg text-destructive">{t('map.unableToLoad')}</p>
         </div>
       </div>
     );
   }
 
+  const getErrorMessage = (): string => {
+    if (error === 'locationError') return t('errors.locationError');
+    if (error === 'geolocationNotSupported') return t('errors.geolocationNotSupported');
+    return '';
+  };
+
   return (
     <div className={className || 'w-full h-full'} style={{ position: 'relative', zIndex: 1 }}>
       {error && (
         <div className="bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-400 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200 px-4 py-2 rounded mb-2">
-          {error}
+          {getErrorMessage()}
         </div>
       )}
       <MapContainer
@@ -199,7 +211,6 @@ export default function Map({ className }: MapProps) {
           <Marker position={userPosition} icon={createUserLocationIcon(bearing)}>
             <Popup>
               <div className="text-center">
-                <p className="font-semibold">Your Location</p>
                 <p className="text-sm text-muted-foreground">
                   {userPosition[0].toFixed(4)}, {userPosition[1].toFixed(4)}
                 </p>

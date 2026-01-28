@@ -1,0 +1,29 @@
+{
+  "app": {
+    "title": "Travel Porto"
+  },
+  "header": {
+    "toggleTheme": "Toggle theme",
+    "light": "light",
+    "dark": "dark"
+  },
+  "map": {
+    "loading": "Loading map...",
+    "gettingLocation": "Getting your location...",
+    "unableToLoad": "Unable to load map"
+  },
+  "busStop": {
+    "title": "Bus Stop"
+  },
+  "menu": {
+    "settings": "Settings",
+    "theme": "Theme",
+    "language": "Language",
+    "portuguese": "Portuguese",
+    "english": "English"
+  },
+  "errors": {
+    "locationError": "Unable to retrieve your location.",
+    "geolocationNotSupported": "Geolocation is not supported by your browser."
+  }
+}

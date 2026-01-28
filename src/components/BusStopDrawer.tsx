@@ -8,6 +8,8 @@ import {
   DrawerTitle,
 } from './ui/drawer';
 import { X, Locate, LocateFixed } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useTranslation } from '../lib/i18n';
 import type { BusStop } from '../api/types';
 import { centerMap } from '../lib/map';
 import L from 'leaflet';
@@ -26,6 +28,8 @@ export default function BusStopDrawer({
   onOpenChange,
   mapInstance,
 }: BusStopDrawerProps) {
+  const { language } = useLanguage();
+  const t = useTranslation(language);
   const [isCenteredOnStop, setIsCenteredOnStop] = useState(false);
 
   useEffect(() => {
@@ -82,7 +86,7 @@ export default function BusStopDrawer({
           <DrawerHeader>
             <div className="flex items-center justify-between w-full">
               <DrawerTitle className="flex-1 text-left">
-                {stop?.name || 'Bus Stop'}
+                {stop?.name || t('busStop.title')}
               </DrawerTitle>
               <div className="flex items-center gap-2">
                 {stop && (
@@ -90,7 +94,6 @@ export default function BusStopDrawer({
                     variant="ghost"
                     size="icon"
                     onClick={handleReCenter}
-                    aria-label="Re-center map on stop"
                   >
                     {getLocationIcon()}
                   </Button>
@@ -98,7 +101,6 @@ export default function BusStopDrawer({
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  aria-label="Close"
                   onClick={() => onOpenChange(false)}
                 >
                   <X className="h-4 w-4" />

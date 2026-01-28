@@ -1,0 +1,29 @@
+{
+  "app": {
+    "title": "Travel Porto"
+  },
+  "header": {
+    "toggleTheme": "Alternar tema",
+    "light": "claro",
+    "dark": "escuro"
+  },
+  "map": {
+    "loading": "A carregar o mapa...",
+    "gettingLocation": "A obter a  localização...",
+    "unableToLoad": "Não foi possível carregar o mapa"
+  },
+  "busStop": {
+    "title": "Paragem de Autocarro"
+  },
+  "menu": {
+    "settings": "Definições",
+    "theme": "Tema",
+    "language": "Idioma",
+    "portuguese": "Português",
+    "english": "Inglês"
+  },
+  "errors": {
+    "locationError": "Não foi possível obter a sua localização.",
+    "geolocationNotSupported": "A geolocalização não é suportada pelo seu browser."
+  }
+}
