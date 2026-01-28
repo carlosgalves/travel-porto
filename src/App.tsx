@@ -10,7 +10,7 @@ function App() {
       <MapProvider>
         <div className="w-screen h-screen flex flex-col">
           <Header />
-          <div className="flex-1 pt-14">
+          <div className="flex-1">
             <Map className="w-full h-full" />
           </div>
         </div>

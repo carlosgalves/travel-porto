@@ -9,6 +9,7 @@ import {
 } from './ui/drawer';
 import { X, Locate, LocateFixed } from 'lucide-react';
 import type { BusStop } from '../api/types';
+import { centerMap } from '../lib/map';
 import L from 'leaflet';
 
 
@@ -62,15 +63,7 @@ export default function BusStopDrawer({
 
   const handleReCenter = () => {
     if (mapInstance && stop) {
-      mapInstance.setView(
-        [stop.coordinates.latitude, stop.coordinates.longitude],
-        16,
-        {
-          animate: true,
-          duration: 0.5,
-          easeLinearity: 0.25
-        }
-      );
+      centerMap(mapInstance, [stop.coordinates.latitude, stop.coordinates.longitude]);
       setIsCenteredOnStop(true);
     }
   };

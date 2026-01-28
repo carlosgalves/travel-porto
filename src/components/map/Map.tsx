@@ -9,6 +9,7 @@ import { useMapContext } from '../../contexts/MapContext';
 import BusStops from './BusStops';
 import type { BusStop } from '../../api/types';
 import BusStopDrawer from '../BusStopDrawer';
+import { centerMap } from '../../lib/map';
 import { createUserLocationIcon } from './UserMarker';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -90,18 +91,7 @@ export default function Map({ className }: MapProps) {
   const handleStopClick = useCallback((stop: BusStop) => {
     setSelectedStop(stop);
     setDrawerOpen(true);
-    // Center map on the selected stop with smooth animation
-    if (mapInstance) {
-      mapInstance.setView(
-        [stop.coordinates.latitude, stop.coordinates.longitude],
-        mapInstance.getZoom(),
-        {
-          animate: true,
-          duration: 0.5,
-          easeLinearity: 0
-        }
-      );
-    }
+    centerMap(mapInstance, [stop.coordinates.latitude, stop.coordinates.longitude]);
   }, [mapInstance]);
 
   useEffect(() => {

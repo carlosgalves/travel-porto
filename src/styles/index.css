@@ -141,6 +141,37 @@
   pointer-events: auto !important;
 }
 
+header {
+  pointer-events: auto !important;
+  isolation: isolate;
+  position: relative;
+}
+
+header,
+header *,
+header button,
+header [role="button"],
+header > *,
+header > * > * {
+  pointer-events: auto !important;
+}
+
+[data-slot="drawer-portal"]:has([data-slot="drawer-content"].pointer-events-none) {
+  pointer-events: none !important;
+}
+
+[data-slot="drawer-portal"] [data-slot="drawer-content"].pointer-events-none .pointer-events-auto,
+[data-slot="drawer-portal"] [data-slot="drawer-content"].pointer-events-none .pointer-events-auto * {
+  pointer-events: auto !important;
+}
+
+[style*="z-index: 100"],
+[style*="z-index: 101"],
+[class*="z-\[100\]"],
+[class*="z-\[101\]"] {
+  pointer-events: auto !important;
+}
+
 .leaflet-container {
   pointer-events: auto !important;
 }

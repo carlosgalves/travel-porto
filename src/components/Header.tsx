@@ -2,7 +2,7 @@ import { Moon, Sun, Locate, LocateFixed, LocateOff } from 'lucide-react';
 import { Button } from './ui/button';
 import { useTheme } from '../contexts/ThemeContext';
 import { useMapContext } from '../contexts/MapContext';
-
+import { centerMap } from '../lib/map';
 
 export default function Header() {
   const { theme, toggleTheme } = useTheme();
@@ -10,7 +10,7 @@ export default function Header() {
 
   const handleReCenter = () => {
     if (mapInstance && userPosition) {
-      mapInstance.setView(userPosition, 16);
+      centerMap(mapInstance, userPosition);
       setIsCenteredOnUser(true);
     }
   };
@@ -26,7 +26,7 @@ export default function Header() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border shadow-sm">
+    <header className="fixed top-0 left-0 right-0 z-[100] bg-background/80 backdrop-blur-sm border-b border-border shadow-sm">
       <div className="flex items-center justify-between h-14 px-4">
         <div className="flex items-center">
           <h1 className="text-lg font-semibold">Travel Porto</h1>
