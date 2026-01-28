@@ -1,0 +1,241 @@
+import { useCallback, useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useMapContext } from '../../contexts/MapContext';
+import BusStops from './BusStops';
+import type { BusStop } from '../../api/types';
+import BusStopDrawer from '../BusStopDrawer';
+import { createUserLocationIcon } from './UserMarker';
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+
+const DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
+
+const PORTO_CENTER: [number, number] = [41.1579, -8.6291];
+
+function MapCenter({ center }: { center: [number, number] }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, map.getZoom());
+  }, [map, center]);
+  return null;
+}
+
+function MapController({ onMapReady }: { onMapReady: (map: L.Map) => void }) {
+  const map = useMap();
+  useEffect(() => {
+    onMapReady(map);
+  }, [map, onMapReady]);
+  return null;
+}
+
+function MapCenterTracker({ userPosition, onCenteredChange }: { userPosition: [number, number] | null; onCenteredChange: (isCentered: boolean) => void }) {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (!userPosition) {
+      onCenteredChange(false);
+      return;
+    }
+
+    const checkCenter = () => {
+      const center = map.getCenter();
+      const distance = center.distanceTo(L.latLng(userPosition[0], userPosition[1]));
+      const isCentered = distance < 50;
+      onCenteredChange(isCentered);
+    };
+
+    // Check on move
+    map.on('moveend', checkCenter);
+    
+    checkCenter();
+
+    return () => {
+      map.off('moveend', checkCenter);
+    };
+  }, [map, userPosition, onCenteredChange]);
+
+  return null;
+}
+
+
+interface MapProps {
+  className?: string;
+}
+
+export default function Map({ className }: MapProps) {
+  const { theme } = useTheme();
+  const { mapInstance, setMapInstance, setUserPosition, setHasLocationPermission, setIsCenteredOnUser, userPosition } = useMapContext();
+  const [position, setPosition] = useState<[number, number] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedStop, setSelectedStop] = useState<BusStop | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [bearing, setBearing] = useState<number | null>(null);
+
+  const handleStopClick = useCallback((stop: BusStop) => {
+    setSelectedStop(stop);
+    setDrawerOpen(true);
+    // Center map on the selected stop with smooth animation
+    if (mapInstance) {
+      mapInstance.setView(
+        [stop.coordinates.latitude, stop.coordinates.longitude],
+        mapInstance.getZoom(),
+        {
+          animate: true,
+          duration: 0.5,
+          easeLinearity: 0
+        }
+      );
+    }
+  }, [mapInstance]);
+
+  useEffect(() => {
+    if ('geolocation' in navigator) {
+      let watchId: number | null = null;
+      
+      const geoOptions = {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      };
+
+      navigator.geolocation.getCurrentPosition(
+        (geoPosition) => {
+          const { latitude, longitude, heading } = geoPosition.coords;
+          const userPos: [number, number] = [latitude, longitude];
+          setPosition(userPos);
+          setUserPosition(userPos);
+          setHasLocationPermission(true);
+          setBearing(heading ?? null);
+          setLoading(false);
+
+          watchId = navigator.geolocation.watchPosition(
+            (geoPosition) => {
+              const { latitude, longitude, heading } = geoPosition.coords;
+              const userPos: [number, number] = [latitude, longitude];
+              setPosition(userPos);
+              setUserPosition(userPos);
+              setBearing(heading ?? null);
+            },
+            (err) => {
+              console.error('Geolocation watch error:', err);
+            },
+            geoOptions
+          );
+        },
+        (err) => {
+          console.error('Geolocation error:', err);
+          setError('Unable to retrieve your location.');
+          setPosition(PORTO_CENTER);
+          setHasLocationPermission(false);
+          setLoading(false);
+        },
+        geoOptions
+      );
+
+      return () => {
+        if (watchId !== null) {
+          navigator.geolocation.clearWatch(watchId);
+        }
+      };
+    } else {
+      setError('Geolocation is not supported by your browser.');
+      setPosition(PORTO_CENTER);
+      setHasLocationPermission(false);
+      setLoading(false);
+    }
+  }, [setUserPosition, setHasLocationPermission]);
+
+  if (loading) {
+    return (
+      <div className={`flex items-center justify-center h-full ${className || ''}`}>
+        <div className="text-center">
+          <p className="text-lg">Loading map...</p>
+          <p className="text-sm text-muted-foreground">Getting your location...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!position) {
+    return (
+      <div className={`flex items-center justify-center h-full ${className || ''}`}>
+        <div className="text-center">
+          <p className="text-lg text-destructive">Unable to load map</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={className || 'w-full h-full'} style={{ position: 'relative', zIndex: 1 }}>
+      {error && (
+        <div className="bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-400 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200 px-4 py-2 rounded mb-2">
+          {error}
+        </div>
+      )}
+      <MapContainer
+        center={position}
+        zoom={16}
+        minZoom={12}
+        maxZoom={18}
+        style={{ height: '100%', width: '100%', zIndex: 0 }}
+        scrollWheelZoom={true}
+      >
+        <TileLayer
+          key={theme}
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url={theme === 'dark' 
+            ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+            : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'}
+          subdomains="abcd"
+        />
+        {userPosition && (
+          <Marker position={userPosition} icon={createUserLocationIcon(bearing)}>
+            <Popup>
+              <div className="text-center">
+                <p className="font-semibold">Your Location</p>
+                <p className="text-sm text-muted-foreground">
+                  {userPosition[0].toFixed(4)}, {userPosition[1].toFixed(4)}
+                </p>
+              </div>
+            </Popup>
+          </Marker>
+        )}
+        <BusStops
+          selectedStopId={selectedStop?.id}
+          onStopClick={handleStopClick}
+        />
+        <MapCenter center={position} />
+        <MapController onMapReady={(map) => setMapInstance(map)} />
+        <MapCenterTracker userPosition={userPosition} onCenteredChange={setIsCenteredOnUser} />
+      </MapContainer>
+      <BusStopDrawer
+        stop={selectedStop}
+        open={drawerOpen}
+        onOpenChange={(open) => {
+          setDrawerOpen(open);
+          if (!open) {
+            setSelectedStop(null);
+          }
+        }}
+        mapInstance={mapInstance}
+      />
+    </div>
+  );
+}
