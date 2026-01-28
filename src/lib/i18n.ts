@@ -17,7 +17,8 @@ type TranslationKey =
   | 'menu.portuguese'
   | 'menu.english'
   | 'errors.locationError'
-  | 'errors.geolocationNotSupported';
+  | 'errors.geolocationNotSupported'
+  | 'errors.noInternetConnection';
 
 const translations: Record<Language, typeof enTranslations> = {
   en: enTranslations,

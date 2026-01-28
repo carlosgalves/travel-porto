@@ -13,6 +13,7 @@ import type { BusStop } from '../../api/types';
 import BusStopDrawer from '../BusStopDrawer';
 import { centerMap } from '../../lib/map';
 import { createUserLocationIcon } from './UserMarker';
+import { Alert, AlertDescription } from '../ui/alert';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
@@ -80,7 +81,7 @@ interface MapProps {
   className?: string;
 }
 
-type ErrorType = 'locationError' | 'geolocationNotSupported' | null;
+type ErrorType = 'locationError' | 'geolocationNotSupported' | 'noInternetConnection' | null;
 
 export default function Map({ className }: MapProps) {
   const { theme } = useTheme();
@@ -100,6 +101,58 @@ export default function Map({ className }: MapProps) {
     centerMap(mapInstance, [stop.coordinates.latitude, stop.coordinates.longitude]);
   }, [mapInstance]);
 
+  // check internet connection
+  useEffect(() => {
+    const checkConnectivity = async () => {
+      if (!navigator.onLine) {
+        setError('noInternetConnection');
+        return;
+      }
+
+      // connectivity test
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        await fetch('https://www.google.com/favicon.ico', {
+          method: 'HEAD',
+          mode: 'no-cors',
+          signal: controller.signal,
+          cache: 'no-cache',
+        });
+        
+        clearTimeout(timeoutId);
+        
+        setError((prevError) => prevError === 'noInternetConnection' ? null : prevError);
+      } catch (err) {
+        setError('noInternetConnection');
+      }
+    };
+
+    // Check on mount
+    checkConnectivity();
+
+    const handleOnline = () => {
+      checkConnectivity();
+    };
+
+    const handleOffline = () => {
+      setError('noInternetConnection');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Periodic check every 30 seconds
+    const intervalId = setInterval(checkConnectivity, 30000);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      clearInterval(intervalId);
+    };
+  }, []);
+  
   useEffect(() => {
     if ('geolocation' in navigator) {
       let watchId: number | null = null;
@@ -136,7 +189,8 @@ export default function Map({ className }: MapProps) {
         },
         (err) => {
           console.error('Geolocation error:', err);
-          setError('locationError');
+          // Only set location error if we don't already have an internet connection error
+          setError((prevError) => prevError === 'noInternetConnection' ? prevError : 'locationError');
           setPosition(PORTO_CENTER);
           setHasLocationPermission(false);
           setLoading(false);
@@ -150,7 +204,7 @@ export default function Map({ className }: MapProps) {
         }
       };
     } else {
-      setError('geolocationNotSupported');
+      setError((prevError) => prevError === 'noInternetConnection' ? prevError : 'geolocationNotSupported');
       setPosition(PORTO_CENTER);
       setHasLocationPermission(false);
       setLoading(false);
@@ -181,14 +235,27 @@ export default function Map({ className }: MapProps) {
   const getErrorMessage = (): string => {
     if (error === 'locationError') return t('errors.locationError');
     if (error === 'geolocationNotSupported') return t('errors.geolocationNotSupported');
+    if (error === 'noInternetConnection') return t('errors.noInternetConnection');
     return '';
+  };
+
+  const getErrorVariant = (): 'error' | 'alert' => {
+    if (error === 'noInternetConnection') return 'error';
+    return 'alert';
   };
 
   return (
     <div className={className || 'w-full h-full'} style={{ position: 'relative', zIndex: 1 }}>
       {error && (
-        <div className="bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-400 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200 px-4 py-2 rounded mb-2">
-          {getErrorMessage()}
+        <div className="fixed top-16 left-4 right-4 z-[200] max-w-md mx-auto">
+          <Alert 
+            variant={getErrorVariant()} 
+            onClose={() => setError(null)}
+          >
+            <AlertDescription>
+              {getErrorMessage()}
+            </AlertDescription>
+          </Alert>
         </div>
       )}
       <MapContainer

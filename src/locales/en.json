@@ -24,6 +24,7 @@
   },
   "errors": {
     "locationError": "Unable to retrieve your location.",
-    "geolocationNotSupported": "Geolocation is not supported by your browser."
+    "geolocationNotSupported": "Geolocation is not supported by your browser.",
+    "noInternetConnection": "No internet connection."
   }
 }
