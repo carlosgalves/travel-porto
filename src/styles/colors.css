@@ -42,6 +42,172 @@
   --marker-bus-stop-size: 20px;
   --marker-bus-stop-border: 2px;
   --marker-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+  --route-200: #187EC2;
+  --route-201: #187EC2;
+  --route-202: #187EC2;
+  --route-203: #187EC2;
+  --route-204: #187EC2;
+  --route-205: #187EC2;
+  --route-206: #187EC2;
+  --route-207: #187EC2;
+  --route-208: #187EC2;
+  --route-209: #187EC2;
+
+  --route-300: #187EC2;
+  --route-301: #187EC2;
+  --route-302: #187EC2;
+  --route-303: #187EC2;
+  --route-304: #187EC2;
+  --route-305: #187EC2;
+
+  --route-400: #187EC2;
+  --route-401: #187EC2;
+  --route-402: #187EC2;
+  --route-403: #187EC2;
+  --route-404: #187EC2;
+
+  --route-500: #FCD116;
+  --route-501: #FCD116;
+  --route-502: #FCD116;
+  --route-503: #FCD116;
+  --route-504: #FCD116;
+  --route-505: #FCD116;
+  --route-506: #FCD116;
+  --route-507: #FCD116;
+  --route-508: #FCD116;
+
+  --route-600: #00AC00;
+  --route-601: #00AC00;
+  --route-602: #00AC00;
+  --route-603: #00AC00;
+  --route-604: #00AC00;
+
+  --route-700: #FF0000;
+  --route-701: #FF0000;
+  --route-702: #FF0000;
+  --route-703: #FF0000;
+  --route-704: #FF0000;
+  --route-705: #FF0000;
+  --route-706: #FF0000;
+  --route-707: #FF0000;
+
+  --route-800: #A347FF;
+  --route-801: #A347FF;
+  --route-803: #A347FF;
+  --route-804: #A347FF;
+  --route-805: #A347FF;
+  --route-806: #A347FF;
+
+  --route-900: #FF7900;
+  --route-901: #FF7900;
+  --route-902: #FF7900;
+  --route-903: #FF7900;
+  --route-904: #FF7900;
+  --route-905: #FF7900;
+  --route-906: #FF7900;
+  --route-907: #FF7900;
+
+  --route-1: #187EC2;
+  --route-18: #187EC2;
+  --route-106: #FF7900;
+  --route-107: #187EC2;
+
+  --route-10M: #000000;
+  --route-1M: #000000;
+  --route-2M: #000000;
+  --route-3M: #000000;
+  --route-4M: #000000;
+  --route-5M: #000000;
+  --route-7M: #000000;
+  --route-8M: #000000;
+  --route-9M: #000000;
+  --route-11M: #000000;
+  --route-12M: #000000;
+  --route-13M: #000000;
+
+  --route-text-200: #FFFFFF;
+  --route-text-201: #FFFFFF;
+  --route-text-202: #FFFFFF;
+  --route-text-203: #FFFFFF;
+  --route-text-204: #FFFFFF;
+  --route-text-205: #FFFFFF;
+  --route-text-206: #FFFFFF;
+  --route-text-207: #FFFFFF;
+  --route-text-208: #FFFFFF;
+  --route-text-209: #FFFFFF;
+
+  --route-text-300: #FFFFFF;
+  --route-text-301: #FFFFFF;
+  --route-text-302: #FFFFFF;
+  --route-text-303: #FFFFFF;
+  --route-text-304: #FFFFFF;
+  --route-text-305: #FFFFFF;
+
+  --route-text-400: #FFFFFF;
+  --route-text-401: #FFFFFF;
+  --route-text-402: #FFFFFF;
+  --route-text-403: #FFFFFF;
+  --route-text-404: #FFFFFF;
+
+  --route-text-500: #000000;
+  --route-text-501: #000000;
+  --route-text-502: #000000;
+  --route-text-503: #000000;
+  --route-text-504: #000000;
+  --route-text-505: #000000;
+  --route-text-506: #000000;
+  --route-text-507: #000000;
+  --route-text-508: #000000;
+
+  --route-text-600: #FFFFFF;
+  --route-text-601: #FFFFFF;
+  --route-text-602: #FFFFFF;
+  --route-text-603: #FFFFFF;
+  --route-text-604: #FFFFFF;
+
+  --route-text-700: #FFFFFF;
+  --route-text-701: #FFFFFF;
+  --route-text-702: #FFFFFF;
+  --route-text-703: #FFFFFF;
+  --route-text-704: #FFFFFF;
+  --route-text-705: #FFFFFF;
+  --route-text-706: #FFFFFF;
+  --route-text-707: #FFFFFF;
+
+  --route-text-800: #FFFFFF;
+  --route-text-801: #FFFFFF;
+  --route-text-803: #FFFFFF;
+  --route-text-804: #FFFFFF;
+  --route-text-805: #FFFFFF;
+  --route-text-806: #FFFFFF;
+
+  --route-text-900: #FFFFFF;
+  --route-text-901: #FFFFFF;
+  --route-text-902: #FFFFFF;
+  --route-text-903: #FFFFFF;
+  --route-text-904: #FFFFFF;
+  --route-text-905: #FFFFFF;
+  --route-text-906: #FFFFFF;
+  --route-text-907: #FFFFFF;
+
+  --route-text-1: #FFFFFF;
+  --route-text-18: #FFFFFF;
+  --route-text-106: #FFFFFF;
+  --route-text-107: #FFFFFF;
+
+  --route-text-10M: #FFFFFF;
+  --route-text-1M: #FFFFFF;
+  --route-text-2M: #FFFFFF;
+  --route-text-3M: #FFFFFF;
+  --route-text-4M: #FFFFFF;
+  --route-text-5M: #FFFFFF;
+  --route-text-7M: #FFFFFF;
+  --route-text-8M: #FFFFFF;
+  --route-text-9M: #FFFFFF;
+  --route-text-11M: #FFFFFF;
+  --route-text-12M: #FFFFFF;
+  --route-text-13M: #FFFFFF;
 }
 
 /* Dark theme */

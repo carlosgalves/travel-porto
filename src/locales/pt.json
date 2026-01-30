@@ -13,7 +13,15 @@
     "unableToLoad": "Não foi possível carregar o mapa"
   },
   "busStop": {
-    "title": "Paragem de Autocarro"
+    "title": "Paragem de Autocarro",
+    "arrivalNow": "Agora",
+    "linesAtThisStop": "Linhas nesta paragem:",
+    "nextArrivals": "Próximas chegadas:",
+    "scheduledArrivals": "Chegadas programadas",
+    "scheduledArrivalsLabel": "Horários agendados:",
+    "loadingScheduledArrivals": "A carregar chegadas programadas...",
+    "noScheduledArrivals": "Sem chegadas programadas.",
+    "scheduledArrivalsError": "Não foi possível carregar as chegadas programadas."
   },
   "menu": {
     "settings": "Definições",

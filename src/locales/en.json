@@ -13,7 +13,15 @@
     "unableToLoad": "Unable to load map"
   },
   "busStop": {
-    "title": "Bus Stop"
+    "title": "Bus Stop",
+    "arrivalNow": "Now",
+    "linesAtThisStop": "Lines at this stop:",
+    "nextArrivals": "Next arrivals:",
+    "scheduledArrivals": "Scheduled arrivals",
+    "scheduledArrivalsLabel": "Scheduled arrivals:",
+    "loadingScheduledArrivals": "Loading scheduled arrivals...",
+    "noScheduledArrivals": "No scheduled arrivals.",
+    "scheduledArrivalsError": "Unable to load scheduled arrivals."
   },
   "menu": {
     "settings": "Settings",

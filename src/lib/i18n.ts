@@ -1,6 +1,7 @@
 import enTranslations from '../locales/en.json';
 import ptTranslations from '../locales/pt.json';
 import type { Language } from '../contexts/LanguageContext';
+import { useCallback } from 'react';
 
 type TranslationKey = 
   | 'app.title'
@@ -11,6 +12,14 @@ type TranslationKey =
   | 'map.gettingLocation'
   | 'map.unableToLoad'
   | 'busStop.title'
+  | 'busStop.arrivalNow'
+  | 'busStop.linesAtThisStop'
+  | 'busStop.nextArrivals'
+  | 'busStop.scheduledArrivals'
+  | 'busStop.scheduledArrivalsLabel'
+  | 'busStop.loadingScheduledArrivals'
+  | 'busStop.noScheduledArrivals'
+  | 'busStop.scheduledArrivalsError'
   | 'menu.settings'
   | 'menu.theme'
   | 'menu.language'
@@ -53,7 +62,8 @@ export function getTranslation(language: Language, key: TranslationKey, params?:
 }
 
 export function useTranslation(language: Language) {
-  return (key: TranslationKey, params?: Record<string, string>) => {
-    return getTranslation(language, key, params);
-  };
+  return useCallback(
+    (key: TranslationKey, params?: Record<string, string>) => getTranslation(language, key, params),
+    [language]
+  );
 }

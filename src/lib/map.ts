@@ -11,7 +11,7 @@ const CENTER_ANIMATION = {
 export function centerMap(
   map: L.Map | null,
   center: [number, number],
-  zoom = 16
+  zoom = 17
 ): void {
   if (!map) return;
   map.setView(center, zoom, CENTER_ANIMATION);
