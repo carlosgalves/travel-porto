@@ -22,8 +22,7 @@
     "loadingScheduledArrivals": "Loading scheduled arrivals...",
     "noScheduledArrivals": "No scheduled arrivals.",
     "scheduledArrivalsError": "Unable to load scheduled arrivals.",
-    "saveStop": "Save stop",
-    "unsaveStop": "Remove from saved"
+    "close": "Close"
   },
   "menu": {
     "settings": "Settings",

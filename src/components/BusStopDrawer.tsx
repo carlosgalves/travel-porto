@@ -1,13 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from './ui/button';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHandle,
-  DrawerHeader,
-  DrawerTitle,
-} from './ui/drawer';
 import { ScrollArea } from './ui/scroll-area';
 import { Toggle } from './ui/toggle';
 import { X, Locate, LocateFixed, Clock, Bookmark } from 'lucide-react';
@@ -218,220 +210,145 @@ export default function BusStopDrawer({
       ? displayItems
       : displayItems.filter((d) => enabledRoutes.has(d.route_id));
 
-  const SNAP_POINTS = [0.6, 1.1] as const;
-  const [activeSnapPoint, setActiveSnapPoint] = useState<number | null>(SNAP_POINTS[0]);
-
-  useEffect(() => {
-    if (!open) setActiveSnapPoint(SNAP_POINTS[0]);
-  }, [open]);
-
-  const setActiveSnapPointWrapper = (snapPoint: number | string | null) => {
-    setActiveSnapPoint(snapPoint === null ? null : Number(snapPoint));
-  };
-
-  const isFullHeight = activeSnapPoint === SNAP_POINTS[SNAP_POINTS.length - 1];
-  const contentWrapperRef = useRef<HTMLDivElement>(null);
-  const contentHeaderRef = useRef<HTMLDivElement>(null);
-  const [listVisibleHeight, setListVisibleHeight] = useState<number | null>(
-    null
-  );
-
-  useLayoutEffect(() => {
-    if (!open || !stop || isFullHeight) {
-      setListVisibleHeight(null);
-      return;
-    }
-    const measure = () => {
-      const cw = contentWrapperRef.current;
-      const header = contentHeaderRef.current;
-      if (!cw || !header) return;
-      const cwRect = cw.getBoundingClientRect();
-      const headerRect = header.getBoundingClientRect();
-      const viewportBottom = window.innerHeight;
-      const listTop = headerRect.bottom;
-      const listBottom = Math.min(cwRect.bottom, viewportBottom);
-      const height = Math.max(0, listBottom - Math.max(listTop, 0));
-      setListVisibleHeight(height);
-    };
-    measure();
-    const raf = requestAnimationFrame(measure);
-    const resizeObserver = new ResizeObserver(measure);
-    if (contentWrapperRef.current) {
-      resizeObserver.observe(contentWrapperRef.current);
-    }
-    const timeout = setTimeout(measure, 350);
-    return () => {
-      cancelAnimationFrame(raf);
-      resizeObserver.disconnect();
-      clearTimeout(timeout);
-    };
-  }, [open, stop, activeSnapPoint, isFullHeight]);
+  if (!open) return null;
 
   return (
-    <Drawer
-      open={open}
-      onOpenChange={onOpenChange}
-      modal={false}
-      dismissible
-      handleOnly
-      snapPoints={[...SNAP_POINTS]}
-      activeSnapPoint={activeSnapPoint}
-      setActiveSnapPoint={setActiveSnapPointWrapper}
+    <div
+      className="bus-stop-panel fixed inset-x-0 bottom-0 z-40 flex h-[45vh] max-h-[45vh] flex-col overflow-hidden rounded-t-lg border-t border-border bg-background shadow-lg"
+      role="dialog"
+      aria-modal="false"
+      aria-label={stop?.name ?? t('busStop.title')}
     >
-      <DrawerContent showOverlay={false} className="drawer-map-passthrough !z-40">
-        <div className="drawer-interactive flex min-h-0 flex-1 flex-col">
-          <DrawerHeader>
-            <div className="flex items-center justify-between w-full gap-2">
-              <DrawerHandle className="min-w-0 flex-1 cursor-grab active:cursor-grabbing border-0 bg-transparent p-0 text-left [&]:block">
-                <DrawerTitle className="text-left">
-                  {stop?.name || t('busStop.title')}
-                </DrawerTitle>
-              </DrawerHandle>
-              <div className="flex shrink-0 items-center gap-2">
-                {stop && (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() =>
-                        isSavedStop(stop.id)
-                          ? removeSavedStop(stop.id)
-                          : addSavedStop(stop)
-                      }
-                      aria-label={
-                        isSavedStop(stop.id)
-                          ? t('busStop.unsaveStop')
-                          : t('busStop.saveStop')
-                      }
-                    >
-                      <Bookmark
-                        className={`h-4 w-4 ${isSavedStop(stop.id) ? 'fill-current' : ''}`}
-                      />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleReCenter}
-                    >
-                      {getLocationIcon()}
-                    </Button>
-                  </>
-                )}
+      <div className="flex flex-col gap-0.5 border-b border-border p-4">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="min-w-0 flex-1 text-left font-semibold text-foreground">
+            {stop?.name || t('busStop.title')}
+          </h2>
+          <div className="flex shrink-0 items-center gap-2">
+            {stop && (
+              <>
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => onOpenChange(false)}
+                  onClick={() =>
+                    isSavedStop(stop.id)
+                      ? removeSavedStop(stop.id)
+                      : addSavedStop(stop)
+                  }
                 >
-                  <X className="h-4 w-4" />
+                  <Bookmark
+                    className={`h-4 w-4 ${isSavedStop(stop.id) ? 'fill-current' : ''}`}
+                  />
                 </Button>
-              </div>
-            </div>
-            {stop && (
-              <DrawerDescription className="mt-1 flex justify-between text-muted-foreground">
-                <span>{stop.id}</span>
-                <span>{stop.zone_id}</span>
-              </DrawerDescription>
-            )}
-          </DrawerHeader>
-
-          {stop && (
-            <div
-              ref={contentWrapperRef}
-              className="flex min-h-0 flex-1 flex-col overflow-hidden border-t border-border px-4 pb-4 pt-3"
-            >
-              <div ref={contentHeaderRef} className="shrink-0">
-                <div className="text-sm font-medium mb-2">
-                  {t('busStop.linesAtThisStop')}
-                </div>
-
-              {routeIds.length > 0 && (
-                <div className="mb-4 flex shrink-0 flex-wrap gap-2">
-                  {routeIds.map((routeId) => {
-                    const pressed = enabledRoutes.has(routeId);
-                    const isMSeries = routeId.endsWith('M');
-                    const toggle = (
-                      <Toggle
-                        key={routeId}
-                        size="sm"
-                        variant="outline"
-                        pressed={pressed}
-                        onPressedChange={(next) => {
-                          setEnabledRoutes((prev) => {
-                            const s = new Set(prev);
-                            if (next) s.add(routeId);
-                            else s.delete(routeId);
-                            if (s.size === 0) return new Set(routeIds);
-                            return s;
-                          });
-                        }}
-                        className="gap-0"
-                        style={{
-                          backgroundColor: pressed
-                            ? `var(--route-${routeId}, var(--accent))`
-                            : 'var(--muted)',
-                          borderColor: pressed
-                            ? `var(--route-${routeId}, var(--border))`
-                            : 'var(--border)',
-                          color: pressed
-                            ? `var(--route-text-${routeId}, var(--accent-foreground))`
-                            : 'var(--muted-foreground)',
-                          opacity: pressed ? 1 : 0.7,
-                        }}
-                      >
-                        {routeId}
-                      </Toggle>
-                    );
-                    return isMSeries ? (
-                      <span
-                        key={routeId}
-                        className="inline-flex rounded-md border border-transparent dark:border-white/80"
-                      >
-                        {toggle}
-                      </span>
-                    ) : (
-                      toggle
-                    );
-                  })}
-                </div>
-              )}
-
-              <div className="text-sm font-medium mb-2">
-                  {t('busStop.nextArrivals')}
-                </div>
-
-                {arrivalsLoading && (
-                <div className="text-sm text-muted-foreground">
-                  {t('busStop.loadingScheduledArrivals')}
-                </div>
-              )}
-
-              {!arrivalsLoading && arrivalsError && (
-                <div className="text-sm text-destructive">
-                  {arrivalsError}
-                </div>
-              )}
-
-              {!arrivalsLoading && !arrivalsError && visibleArrivals.length === 0 && (
-                  <div className="text-sm text-muted-foreground">
-                    {t('busStop.noScheduledArrivals')}
-                  </div>
-                )}
-              </div>
-
-              {!arrivalsLoading && !arrivalsError && visibleArrivals.length > 0 && (
-                <ScrollArea
-                  className={
-                    listVisibleHeight != null
-                      ? 'min-h-0 shrink-0 pr-3'
-                      : 'min-h-0 flex-1 pr-3'
-                  }
-                  style={
-                    listVisibleHeight != null
-                      ? { height: listVisibleHeight }
-                      : undefined
-                  }
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleReCenter}
                 >
-                  <div className="space-y-3 pb-4">
+                  {getLocationIcon()}
+                </Button>
+              </>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onOpenChange(false)}
+              aria-label={t('busStop.close')}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        {stop && (
+          <div className="mt-1 flex justify-between text-sm text-muted-foreground">
+            <span>{stop.id}</span>
+            <span>{stop.zone_id}</span>
+          </div>
+        )}
+      </div>
+
+      {stop && (
+        <ScrollArea className="min-h-0 flex-1 px-4 pb-4 pt-3">
+          <div className="flex flex-col gap-3">
+            <div className="text-sm font-medium">
+              {t('busStop.linesAtThisStop')}
+            </div>
+
+            {routeIds.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-2">
+                {routeIds.map((routeId) => {
+                  const pressed = enabledRoutes.has(routeId);
+                  const isMSeries = routeId.endsWith('M');
+                  const toggle = (
+                    <Toggle
+                      key={routeId}
+                      size="sm"
+                      variant="outline"
+                      pressed={pressed}
+                      onPressedChange={(next) => {
+                        setEnabledRoutes((prev) => {
+                          const s = new Set(prev);
+                          if (next) s.add(routeId);
+                          else s.delete(routeId);
+                          if (s.size === 0) return new Set(routeIds);
+                          return s;
+                        });
+                      }}
+                      className="gap-0"
+                      style={{
+                        backgroundColor: pressed
+                          ? `var(--route-${routeId}, var(--accent))`
+                          : 'var(--muted)',
+                        borderColor: pressed
+                          ? `var(--route-${routeId}, var(--border))`
+                          : 'var(--border)',
+                        color: pressed
+                          ? `var(--route-text-${routeId}, var(--accent-foreground))`
+                          : 'var(--muted-foreground)',
+                        opacity: pressed ? 1 : 0.7,
+                      }}
+                    >
+                      {routeId}
+                    </Toggle>
+                  );
+                  return isMSeries ? (
+                    <span
+                      key={routeId}
+                      className="inline-flex rounded-md border border-transparent dark:border-white/80"
+                    >
+                      {toggle}
+                    </span>
+                  ) : (
+                    toggle
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="text-sm font-medium">
+              {t('busStop.nextArrivals')}
+            </div>
+
+            {arrivalsLoading && (
+              <div className="text-sm text-muted-foreground">
+                {t('busStop.loadingScheduledArrivals')}
+              </div>
+            )}
+
+            {!arrivalsLoading && arrivalsError && (
+              <div className="text-sm text-destructive">
+                {arrivalsError}
+              </div>
+            )}
+
+            {!arrivalsLoading && !arrivalsError && visibleArrivals.length === 0 && (
+              <div className="text-sm text-muted-foreground">
+                {t('busStop.noScheduledArrivals')}
+              </div>
+            )}
+
+            {!arrivalsLoading && !arrivalsError && visibleArrivals.length > 0 && (
+              <div className="space-y-3 pb-4">
                     {visibleArrivals
                       .filter((item) => item.type === 'realtime')
                       .map((item) => (
@@ -555,13 +472,11 @@ export default function BusStopDrawer({
                         </div>
                       </>
                     )}
-                  </div>
-                </ScrollArea>
-              )}
-            </div>
-          )}
-        </div>
-      </DrawerContent>
-    </Drawer>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+        )}
+    </div>
   );
 }

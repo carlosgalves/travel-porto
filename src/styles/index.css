@@ -134,38 +134,6 @@
 }
 
 
-/* Code to allow moving the map while drawer is open */
-.drawer-map-passthrough,
-.drawer-map-passthrough *,
-.drawer-map-passthrough::after {
-  pointer-events: none !important;
-}
-.drawer-map-passthrough .drawer-interactive,
-.drawer-map-passthrough .drawer-interactive * {
-  pointer-events: auto !important;
-}
-[data-slot="drawer-portal"]:has(.drawer-map-passthrough) {
-  pointer-events: none !important;
-}
-
-/* Drawer handle */
-[data-slot="drawer-header"] [data-vaul-handle] {
-  background: transparent !important;
-  opacity: 1 !important;
-  margin: 0 !important;
-  height: auto !important;
-  width: auto !important;
-  min-height: 0 !important;
-}
-
-/* Drawer Snap Points*/
-[data-vaul-drawer][data-vaul-snap-points='true'][data-vaul-drawer-direction='bottom'] {
-  top: var(--header-height) !important;
-  bottom: var(--drawer-bottom-margin) !important;
-  height: calc(100dvh - var(--header-height) - var(--drawer-bottom-margin)) !important;
-  max-height: none !important;
-}
-
 header {
   pointer-events: auto !important;
   isolation: isolate;
