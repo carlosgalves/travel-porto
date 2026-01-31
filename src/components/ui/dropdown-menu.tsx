@@ -41,7 +41,7 @@ export function DropdownMenu({ children, trigger, align = 'right' }: DropdownMen
         {open && (
           <div
             className={cn(
-              'absolute z-50 mt-2 min-w-[200px] rounded-md border bg-background shadow-lg',
+              'absolute z-[250] mt-2 min-w-[200px] rounded-md border bg-background shadow-lg',
               align === 'right' ? 'right-0' : 'left-0'
             )}
           >

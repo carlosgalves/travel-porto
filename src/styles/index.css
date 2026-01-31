@@ -136,7 +136,8 @@
 
 /* Code to allow moving the map while drawer is open */
 .drawer-map-passthrough,
-.drawer-map-passthrough * {
+.drawer-map-passthrough *,
+.drawer-map-passthrough::after {
   pointer-events: none !important;
 }
 .drawer-map-passthrough .drawer-interactive,

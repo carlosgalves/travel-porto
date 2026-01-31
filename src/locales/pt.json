@@ -28,7 +28,10 @@
   "menu": {
     "settings": "Definições",
     "savedStops": "Paragens guardadas",
+    "searchSavedStops": "Procurar paragens...",
+    "clearSearch": "Limpar pesquisa",
     "noSavedStops": "Sem paragens guardadas",
+    "noSearchResults": "Nenhuma paragem encontrada",
     "theme": "Tema",
     "language": "Idioma",
     "portuguese": "Português",

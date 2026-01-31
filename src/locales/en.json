@@ -28,7 +28,10 @@
   "menu": {
     "settings": "Settings",
     "savedStops": "Saved stops",
+    "searchSavedStops": "Search stops...",
+    "clearSearch": "Clear search",
     "noSavedStops": "No saved stops",
+    "noSearchResults": "No matching stops",
     "theme": "Theme",
     "language": "Language",
     "portuguese": "Portuguese",
