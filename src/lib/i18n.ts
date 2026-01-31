@@ -33,6 +33,8 @@ type TranslationKey =
   | 'menu.language'
   | 'menu.portuguese'
   | 'menu.english'
+  | 'nav.savedStops'
+  | 'nav.settings'
   | 'errors.locationError'
   | 'errors.geolocationNotSupported'
   | 'errors.noInternetConnection';
@@ -51,8 +53,8 @@ export function getTranslation(language: Language, key: TranslationKey, params?:
   }
   
   if (typeof value !== 'string') {
-    // Fallback to English if translation is missing
-    let fallbackValue: any = translations.en;
+    // Fallback to Portuguese if translation is missing
+    let fallbackValue: any = translations.pt;
     for (const k of keys) {
       fallbackValue = fallbackValue?.[k];
     }

@@ -26,6 +26,13 @@
     "unsaveStop": "Remover das paragensguardadas",
     "close": "Fechar"
   },
+  "nav": {
+    "label": "Navegação principal",
+    "back": "Voltar",
+    "map": "Mapa",
+    "savedStops": "Paragens guardadas",
+    "settings": "Definições"
+  },
   "menu": {
     "settings": "Definições",
     "savedStops": "Paragens guardadas",

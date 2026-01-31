@@ -26,6 +26,13 @@
     "unsaveStop": "Remove from saved",
     "close": "Close"
   },
+  "nav": {
+    "label": "Main navigation",
+    "back": "Back",
+    "map": "Map",
+    "savedStops": "Saved stops",
+    "settings": "Settings"
+  },
   "menu": {
     "settings": "Settings",
     "savedStops": "Saved stops",

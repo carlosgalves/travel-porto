@@ -214,7 +214,7 @@ export default function BusStopDrawer({
 
   return (
     <div
-      className="bus-stop-panel fixed inset-x-0 bottom-0 z-40 flex h-[45vh] max-h-[45vh] flex-col overflow-hidden rounded-t-lg border-t border-border bg-background shadow-lg"
+      className="bus-stop-panel fixed z-40 flex flex-col overflow-hidden border-border bg-background shadow-lg inset-x-0 bottom-0 h-[45vh] max-h-[45vh] rounded-t-lg border-t md:inset-x-auto md:left-0 md:top-14 md:bottom-0 md:h-[calc(100vh-3.5rem)] md:max-h-none md:w-96 md:max-w-[min(24rem,90vw)] md:rounded-r-lg md:rounded-t-none md:border-r md:border-t-0"
       role="dialog"
       aria-modal="false"
       aria-label={stop?.name ?? t('busStop.title')}

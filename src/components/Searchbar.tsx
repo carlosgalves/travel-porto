@@ -10,8 +10,6 @@ export interface SearchbarProps {
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
-  ariaLabel?: string;
-  clearAriaLabel?: string;
   results: BusStop[];
   onSelectStop: (stop: BusStop) => void;
   /** Max number of results visible without scrolling; when there are more, results are shown in a scrollable list. */
@@ -36,8 +34,6 @@ export default function Searchbar({
   value,
   onChange,
   placeholder,
-  ariaLabel,
-  clearAriaLabel,
   results,
   onSelectStop,
   maxVisibleResults,
@@ -72,7 +68,6 @@ export default function Searchbar({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           className="w-full rounded-md border border-input bg-background py-1.5 pl-8 pr-8 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label={ariaLabel ?? placeholder}
         />
         {value.trim() !== '' && (
           <Button
@@ -80,7 +75,6 @@ export default function Searchbar({
             variant="ghost"
             size="icon"
             className="absolute right-0 h-7 w-7 shrink-0"
-            aria-label={clearAriaLabel}
             onClick={(e) => {
               if (stopPropagation) e.stopPropagation();
               onChange('');

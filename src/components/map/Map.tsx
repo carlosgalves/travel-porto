@@ -234,26 +234,7 @@ export default function Map({ className }: MapProps) {
     }
   }, [setUserPosition, setHasLocationPermission]);
 
-  if (loading) {
-    return (
-      <div className={`flex items-center justify-center h-full ${className || ''}`}>
-        <div className="text-center">
-          <p className="text-lg">{t('map.loading')}</p>
-          <p className="text-sm text-muted-foreground">{t('map.gettingLocation')}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!position) {
-    return (
-      <div className={`flex items-center justify-center h-full ${className || ''}`}>
-        <div className="text-center">
-          <p className="text-lg text-destructive">{t('map.unableToLoad')}</p>
-        </div>
-      </div>
-    );
-  }
+  const mapCenter = position ?? PORTO_CENTER;
 
   const getErrorMessage = (): string => {
     if (error === 'locationError') return t('errors.locationError');
@@ -269,10 +250,25 @@ export default function Map({ className }: MapProps) {
 
   return (
     <div className={className || 'w-full h-full'} style={{ position: 'relative', zIndex: 1 }}>
+      {loading && (
+        <div className="absolute inset-0 z-[200] flex items-center justify-center bg-background/60 backdrop-blur-[2px]">
+          <div className="text-center rounded-lg border border-border bg-background/95 px-4 py-3 shadow-lg">
+            <p className="text-lg font-medium">{t('map.loading')}</p>
+            <p className="text-sm text-muted-foreground">{t('map.gettingLocation')}</p>
+          </div>
+        </div>
+      )}
+      {!position && !loading && (
+        <div className="absolute inset-0 z-[200] flex items-center justify-center bg-background/60 backdrop-blur-[2px]">
+          <div className="text-center rounded-lg border border-border bg-background/95 px-4 py-3 shadow-lg">
+            <p className="text-lg font-medium text-destructive">{t('map.unableToLoad')}</p>
+          </div>
+        </div>
+      )}
       {error && (
-        <div className="fixed top-16 left-4 right-4 z-[200] max-w-md mx-auto">
-          <Alert 
-            variant={getErrorVariant()} 
+        <div className="absolute top-3 left-4 right-4 z-[200] max-w-md mx-auto pointer-events-auto">
+          <Alert
+            variant={getErrorVariant()}
             onClose={() => setError(null)}
           >
             <AlertDescription>
@@ -282,7 +278,7 @@ export default function Map({ className }: MapProps) {
         </div>
       )}
       <MapContainer
-        center={position}
+        center={mapCenter}
         zoom={16}
         minZoom={12}
         maxZoom={18}
@@ -313,7 +309,7 @@ export default function Map({ className }: MapProps) {
           urlStopId={urlStopId}
           onStopClick={handleStopClick}
         />
-        <MapCenter center={position} />
+        <MapCenter center={mapCenter} />
         <MapController onMapReady={(map) => setMapInstance(map)} />
         <MapCenterTracker userPosition={userPosition} onCenteredChange={setIsCenteredOnUser} />
       </MapContainer>

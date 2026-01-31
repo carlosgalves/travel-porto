@@ -27,7 +27,6 @@ export function Alert({ children, variant = 'alert', onClose, className }: Alert
         <button
           onClick={onClose}
           className="absolute right-2 top-2 rounded-md p-1 text-white/70 opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-          aria-label="Close alert"
         >
           <X className="h-4 w-4" />
         </button>
