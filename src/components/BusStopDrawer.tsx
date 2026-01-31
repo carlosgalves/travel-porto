@@ -338,6 +338,7 @@ export default function BusStopDrawer({
                             const s = new Set(prev);
                             if (next) s.add(routeId);
                             else s.delete(routeId);
+                            if (s.size === 0) return new Set(routeIds);
                             return s;
                           });
                         }}
