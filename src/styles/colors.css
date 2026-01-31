@@ -36,6 +36,7 @@
   /* Bus Stop Marker */
   --color-user-location: #10b981;
   --color-bus-stop-selected: #2563eb;
+  --color-bus-stop-saved: #d59f23;
   --color-bus-stop-unselected: #9ca3af;
   --color-cluster: #2563eb;
   --color-white: #ffffff;
@@ -247,6 +248,7 @@
   /* Bus Stop Marker */
   --color-user-location: #34d399;
   --color-bus-stop-selected: #60a5fa;
+  --color-bus-stop-saved: #f59e0b;
   --color-bus-stop-unselected: #6b7280;
   --color-cluster: #60a5fa;
   --color-white: #ffffff;

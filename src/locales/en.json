@@ -21,10 +21,14 @@
     "scheduledArrivalsLabel": "Scheduled arrivals:",
     "loadingScheduledArrivals": "Loading scheduled arrivals...",
     "noScheduledArrivals": "No scheduled arrivals.",
-    "scheduledArrivalsError": "Unable to load scheduled arrivals."
+    "scheduledArrivalsError": "Unable to load scheduled arrivals.",
+    "saveStop": "Save stop",
+    "unsaveStop": "Remove from saved"
   },
   "menu": {
     "settings": "Settings",
+    "savedStops": "Saved stops",
+    "noSavedStops": "No saved stops",
     "theme": "Theme",
     "language": "Language",
     "portuguese": "Portuguese",

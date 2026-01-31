@@ -21,10 +21,14 @@
     "scheduledArrivalsLabel": "Horários agendados:",
     "loadingScheduledArrivals": "A carregar chegadas programadas...",
     "noScheduledArrivals": "Sem chegadas programadas.",
-    "scheduledArrivalsError": "Não foi possível carregar as chegadas programadas."
+    "scheduledArrivalsError": "Não foi possível carregar as chegadas programadas.",
+    "saveStop": "Guardar paragem",
+    "unsaveStop": "Remover das guardadas"
   },
   "menu": {
     "settings": "Definições",
+    "savedStops": "Paragens guardadas",
+    "noSavedStops": "Sem paragens guardadas",
     "theme": "Tema",
     "language": "Idioma",
     "portuguese": "Português",

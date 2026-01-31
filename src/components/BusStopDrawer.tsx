@@ -10,8 +10,9 @@ import {
 } from './ui/drawer';
 import { ScrollArea } from './ui/scroll-area';
 import { Toggle } from './ui/toggle';
-import { X, Locate, LocateFixed, Clock } from 'lucide-react';
+import { X, Locate, LocateFixed, Clock, Bookmark } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useMapContext } from '../contexts/MapContext';
 import { useTranslation } from '../lib/i18n';
 import type {
   BusStop,
@@ -42,6 +43,7 @@ export default function BusStopDrawer({
 }: BusStopDrawerProps) {
   const { language } = useLanguage();
   const t = useTranslation(language);
+  const { addSavedStop, removeSavedStop, isSavedStop } = useMapContext();
   const isDebug = String(import.meta.env.VITE_DEBUG).toLowerCase() === 'true';
   const [isCenteredOnStop, setIsCenteredOnStop] = useState(false);
   const [arrivals, setArrivals] = useState<BusScheduledArrivals['data']>([]);
@@ -287,13 +289,33 @@ export default function BusStopDrawer({
               </DrawerHandle>
               <div className="flex shrink-0 items-center gap-2">
                 {stop && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleReCenter}
-                  >
-                    {getLocationIcon()}
-                  </Button>
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() =>
+                        isSavedStop(stop.id)
+                          ? removeSavedStop(stop.id)
+                          : addSavedStop(stop)
+                      }
+                      aria-label={
+                        isSavedStop(stop.id)
+                          ? t('busStop.unsaveStop')
+                          : t('busStop.saveStop')
+                      }
+                    >
+                      <Bookmark
+                        className={`h-4 w-4 ${isSavedStop(stop.id) ? 'fill-current' : ''}`}
+                      />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleReCenter}
+                    >
+                      {getLocationIcon()}
+                    </Button>
+                  </>
                 )}
                 <Button
                   variant="ghost"
