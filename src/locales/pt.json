@@ -22,6 +22,8 @@
     "loadingScheduledArrivals": "A carregar chegadas programadas...",
     "noScheduledArrivals": "Sem chegadas programadas.",
     "scheduledArrivalsError": "Não foi possível carregar as chegadas programadas.",
+    "saveStop": "Guardar paragem",
+    "unsaveStop": "Remover das paragensguardadas",
     "close": "Fechar"
   },
   "menu": {

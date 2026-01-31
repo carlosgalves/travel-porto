@@ -20,6 +20,8 @@ type TranslationKey =
   | 'busStop.loadingScheduledArrivals'
   | 'busStop.noScheduledArrivals'
   | 'busStop.scheduledArrivalsError'
+  | 'busStop.saveStop'
+  | 'busStop.unsaveStop'
   | 'busStop.close'
   | 'menu.settings'
   | 'menu.savedStops'
