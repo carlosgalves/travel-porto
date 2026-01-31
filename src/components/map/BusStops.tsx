@@ -86,9 +86,10 @@ const BusStopMarker = memo(function BusStopMarker({ stop, isSelected, onStopClic
 interface BusStopsProps {
   onStopClick: (stop: BusStop) => void;
   selectedStopId?: string | null;
+  urlStopId?: string | null;
 }
 
-export default function BusStops({ onStopClick, selectedStopId }: BusStopsProps) {
+export default function BusStops({ onStopClick, selectedStopId, urlStopId }: BusStopsProps) {
   const [stops, setStops] = useState<BusStop[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -105,6 +106,12 @@ export default function BusStops({ onStopClick, selectedStopId }: BusStopsProps)
         setLoading(false);
       });
   }, []);
+
+  useEffect(() => {
+    if (!urlStopId || stops.length === 0 || selectedStopId === urlStopId) return;
+    const stop = stops.find((s) => s.id === urlStopId);
+    if (stop) onStopClick(stop);
+  }, [urlStopId, stops, selectedStopId, onStopClick]);
 
   if (loading || error) {
     return null;

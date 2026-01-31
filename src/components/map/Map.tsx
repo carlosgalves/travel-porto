@@ -95,10 +95,33 @@ export default function Map({ className }: MapProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [bearing, setBearing] = useState<number | null>(null);
 
+  const [urlStopId, setUrlStopId] = useState<string | null>(() => {
+    return new URLSearchParams(window.location.search).get('stop');
+  });
+
+  useEffect(() => {
+    const syncUrlToState = () => {
+      setUrlStopId(new URLSearchParams(window.location.search).get('stop'));
+    };
+    window.addEventListener('popstate', syncUrlToState);
+    return () => window.removeEventListener('popstate', syncUrlToState);
+  }, []);
+
+  useEffect(() => {
+    if (urlStopId === null && drawerOpen) {
+      setDrawerOpen(false);
+      setSelectedStop(null);
+    }
+  }, [urlStopId, drawerOpen]);
+
   const handleStopClick = useCallback((stop: BusStop) => {
     setSelectedStop(stop);
     setDrawerOpen(true);
     centerMap(mapInstance, [stop.coordinates.latitude, stop.coordinates.longitude]);
+    const url = new URL(window.location.href);
+    url.searchParams.set('stop', stop.id);
+    window.history.pushState({}, '', url.pathname + url.search);
+    setUrlStopId(stop.id);
   }, [mapInstance]);
 
   // check internet connection
@@ -287,6 +310,7 @@ export default function Map({ className }: MapProps) {
         )}
         <BusStops
           selectedStopId={selectedStop?.id}
+          urlStopId={urlStopId}
           onStopClick={handleStopClick}
         />
         <MapCenter center={position} />
@@ -300,6 +324,10 @@ export default function Map({ className }: MapProps) {
           setDrawerOpen(open);
           if (!open) {
             setSelectedStop(null);
+            const url = new URL(window.location.href);
+            url.searchParams.delete('stop');
+            window.history.replaceState({}, '', url.pathname + url.search);
+            setUrlStopId(null);
           }
         }}
         mapInstance={mapInstance}
