@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button } from './ui/button';
 import {
   Drawer,
   DrawerContent,
   DrawerDescription,
+  DrawerHandle,
   DrawerHeader,
   DrawerTitle,
 } from './ui/drawer';
@@ -215,16 +216,76 @@ export default function BusStopDrawer({
       ? displayItems
       : displayItems.filter((d) => enabledRoutes.has(d.route_id));
 
+  const SNAP_POINTS = [0.6, 1.1] as const;
+  const [activeSnapPoint, setActiveSnapPoint] = useState<number | null>(SNAP_POINTS[0]);
+
+  useEffect(() => {
+    if (!open) setActiveSnapPoint(SNAP_POINTS[0]);
+  }, [open]);
+
+  const setActiveSnapPointWrapper = (snapPoint: number | string | null) => {
+    setActiveSnapPoint(snapPoint === null ? null : Number(snapPoint));
+  };
+
+  const isFullHeight = activeSnapPoint === SNAP_POINTS[SNAP_POINTS.length - 1];
+  const contentWrapperRef = useRef<HTMLDivElement>(null);
+  const contentHeaderRef = useRef<HTMLDivElement>(null);
+  const [listVisibleHeight, setListVisibleHeight] = useState<number | null>(
+    null
+  );
+
+  useLayoutEffect(() => {
+    if (!open || !stop || isFullHeight) {
+      setListVisibleHeight(null);
+      return;
+    }
+    const measure = () => {
+      const cw = contentWrapperRef.current;
+      const header = contentHeaderRef.current;
+      if (!cw || !header) return;
+      const cwRect = cw.getBoundingClientRect();
+      const headerRect = header.getBoundingClientRect();
+      const viewportBottom = window.innerHeight;
+      const listTop = headerRect.bottom;
+      const listBottom = Math.min(cwRect.bottom, viewportBottom);
+      const height = Math.max(0, listBottom - Math.max(listTop, 0));
+      setListVisibleHeight(height);
+    };
+    measure();
+    const raf = requestAnimationFrame(measure);
+    const resizeObserver = new ResizeObserver(measure);
+    if (contentWrapperRef.current) {
+      resizeObserver.observe(contentWrapperRef.current);
+    }
+    const timeout = setTimeout(measure, 350);
+    return () => {
+      cancelAnimationFrame(raf);
+      resizeObserver.disconnect();
+      clearTimeout(timeout);
+    };
+  }, [open, stop, activeSnapPoint, isFullHeight]);
+
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} dismissible={false} modal={false}>
-      <DrawerContent showOverlay={false} className="pointer-events-none !z-40">
-        <div className="pointer-events-auto">
+    <Drawer
+      open={open}
+      onOpenChange={onOpenChange}
+      modal={false}
+      dismissible
+      handleOnly
+      snapPoints={[...SNAP_POINTS]}
+      activeSnapPoint={activeSnapPoint}
+      setActiveSnapPoint={setActiveSnapPointWrapper}
+    >
+      <DrawerContent showOverlay={false} className="drawer-map-passthrough !z-40">
+        <div className="drawer-interactive flex min-h-0 flex-1 flex-col">
           <DrawerHeader>
-            <div className="flex items-center justify-between w-full">
-              <DrawerTitle className="flex-1 text-left">
-                {stop?.name || t('busStop.title')}
-              </DrawerTitle>
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between w-full gap-2">
+              <DrawerHandle className="min-w-0 flex-1 cursor-grab active:cursor-grabbing border-0 bg-transparent p-0 text-left [&]:block">
+                <DrawerTitle className="text-left">
+                  {stop?.name || t('busStop.title')}
+                </DrawerTitle>
+              </DrawerHandle>
+              <div className="flex shrink-0 items-center gap-2">
                 {stop && (
                   <Button
                     variant="ghost"
@@ -234,9 +295,9 @@ export default function BusStopDrawer({
                     {getLocationIcon()}
                   </Button>
                 )}
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => onOpenChange(false)}
                 >
                   <X className="h-4 w-4" />
@@ -244,23 +305,25 @@ export default function BusStopDrawer({
               </div>
             </div>
             {stop && (
-              <DrawerDescription className="mt-1">
-                <span className="flex items-center justify-between">
-                  <span className="text-muted-foreground">{stop.id}</span>
-                  <span className="text-muted-foreground">{stop.zone_id}</span>
-                </span>
+              <DrawerDescription className="mt-1 flex justify-between text-muted-foreground">
+                <span>{stop.id}</span>
+                <span>{stop.zone_id}</span>
               </DrawerDescription>
             )}
           </DrawerHeader>
 
           {stop && (
-            <div className="border-t border-border px-4 pb-4 pt-3">
-              <div className="text-sm font-medium mb-2">
-                {t('busStop.linesAtThisStop')}
-              </div>
+            <div
+              ref={contentWrapperRef}
+              className="flex min-h-0 flex-1 flex-col overflow-hidden border-t border-border px-4 pb-4 pt-3"
+            >
+              <div ref={contentHeaderRef} className="shrink-0">
+                <div className="text-sm font-medium mb-2">
+                  {t('busStop.linesAtThisStop')}
+                </div>
 
               {routeIds.length > 0 && (
-                <div className="mb-4 flex flex-wrap gap-2">
+                <div className="mb-4 flex shrink-0 flex-wrap gap-2">
                   {routeIds.map((routeId) => {
                     const pressed = enabledRoutes.has(routeId);
                     const isMSeries = routeId.endsWith('M');
@@ -310,10 +373,10 @@ export default function BusStopDrawer({
               )}
 
               <div className="text-sm font-medium mb-2">
-                {t('busStop.nextArrivals')}
-              </div>
+                  {t('busStop.nextArrivals')}
+                </div>
 
-              {arrivalsLoading && (
+                {arrivalsLoading && (
                 <div className="text-sm text-muted-foreground">
                   {t('busStop.loadingScheduledArrivals')}
                 </div>
@@ -326,14 +389,26 @@ export default function BusStopDrawer({
               )}
 
               {!arrivalsLoading && !arrivalsError && visibleArrivals.length === 0 && (
-                <div className="text-sm text-muted-foreground">
-                  {t('busStop.noScheduledArrivals')}
-                </div>
-              )}
+                  <div className="text-sm text-muted-foreground">
+                    {t('busStop.noScheduledArrivals')}
+                  </div>
+                )}
+              </div>
 
               {!arrivalsLoading && !arrivalsError && visibleArrivals.length > 0 && (
-                <ScrollArea className="h-56 pr-3">
-                  <div className="space-y-3">
+                <ScrollArea
+                  className={
+                    listVisibleHeight != null
+                      ? 'min-h-0 shrink-0 pr-3'
+                      : 'min-h-0 flex-1 pr-3'
+                  }
+                  style={
+                    listVisibleHeight != null
+                      ? { height: listVisibleHeight }
+                      : undefined
+                  }
+                >
+                  <div className="space-y-3 pb-4">
                     {visibleArrivals
                       .filter((item) => item.type === 'realtime')
                       .map((item) => (

@@ -7,6 +7,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --header-height: 3.5rem;
+  --drawer-bottom-margin: 1rem;
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -14,6 +17,7 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -79,7 +83,8 @@
   border-color: var(--foreground);
 }
 
-.leaflet-control-zoom a {
+.leaflet-control-zoom a,
+.leaflet-control-attribution {
   background-color: var(--card) !important;
   color: var(--card-foreground) !important;
   border: 1px solid var(--border) !important;
@@ -90,7 +95,6 @@
   background-color: var(--accent) !important;
   color: var(--accent-foreground) !important;
 }
-
 .leaflet-control-zoom a:active {
   background-color: var(--primary) !important;
   color: var(--primary-foreground) !important;
@@ -101,24 +105,23 @@
   font-size: 18px !important;
   line-height: 26px !important;
 }
-
-.leaflet-control-attribution {
-  background-color: var(--card) !important;
-  color: var(--card-foreground) !important;
-  border: 1px solid var(--border) !important;
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1) !important;
-}
-
 .leaflet-control-attribution a {
   color: var(--primary) !important;
 }
-
 .leaflet-control-attribution a:hover {
-  color: var(--primary) !important;
   opacity: 0.8;
 }
 
 /* User Location Marker */
+.leaflet-container,
+.leaflet-pane,
+.leaflet-map-pane,
+.leaflet-tile-pane,
+.leaflet-overlay-pane {
+  pointer-events: auto !important;
+}
+
+
 @keyframes userMarkerPulse {
   0%, 100% {
     transform: scale(1);
@@ -130,55 +133,40 @@
   }
 }
 
+
 /* Code to allow moving the map while drawer is open */
-[data-slot="drawer-content"].pointer-events-none,
-[data-slot="drawer-content"].pointer-events-none * {
+.drawer-map-passthrough,
+.drawer-map-passthrough * {
+  pointer-events: none !important;
+}
+.drawer-map-passthrough .drawer-interactive,
+.drawer-map-passthrough .drawer-interactive * {
+  pointer-events: auto !important;
+}
+[data-slot="drawer-portal"]:has(.drawer-map-passthrough) {
   pointer-events: none !important;
 }
 
-[data-slot="drawer-content"].pointer-events-none .pointer-events-auto,
-[data-slot="drawer-content"].pointer-events-none .pointer-events-auto * {
-  pointer-events: auto !important;
+/* Drawer handle */
+[data-slot="drawer-header"] [data-vaul-handle] {
+  background: transparent !important;
+  opacity: 1 !important;
+  margin: 0 !important;
+  height: auto !important;
+  width: auto !important;
+  min-height: 0 !important;
+}
+
+/* Drawer Snap Points*/
+[data-vaul-drawer][data-vaul-snap-points='true'][data-vaul-drawer-direction='bottom'] {
+  top: var(--header-height) !important;
+  bottom: var(--drawer-bottom-margin) !important;
+  height: calc(100dvh - var(--header-height) - var(--drawer-bottom-margin)) !important;
+  max-height: none !important;
 }
 
 header {
   pointer-events: auto !important;
   isolation: isolate;
   position: relative;
-}
-
-header,
-header *,
-header button,
-header [role="button"],
-header > *,
-header > * > * {
-  pointer-events: auto !important;
-}
-
-[data-slot="drawer-portal"]:has([data-slot="drawer-content"].pointer-events-none) {
-  pointer-events: none !important;
-}
-
-[data-slot="drawer-portal"] [data-slot="drawer-content"].pointer-events-none .pointer-events-auto,
-[data-slot="drawer-portal"] [data-slot="drawer-content"].pointer-events-none .pointer-events-auto * {
-  pointer-events: auto !important;
-}
-
-[style*="z-index: 100"],
-[style*="z-index: 101"],
-[class*="z-\[100\]"],
-[class*="z-\[101\]"] {
-  pointer-events: auto !important;
-}
-
-.leaflet-container {
-  pointer-events: auto !important;
-}
-
-.leaflet-pane,
-.leaflet-map-pane,
-.leaflet-tile-pane,
-.leaflet-overlay-pane {
-  pointer-events: auto !important;
 }
