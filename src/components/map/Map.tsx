@@ -147,7 +147,7 @@ export default function Map({ className }: MapProps) {
         clearTimeout(timeoutId);
         
         setError((prevError) => prevError === 'noInternetConnection' ? null : prevError);
-      } catch (err) {
+      } catch {
         setError('noInternetConnection');
       }
     };

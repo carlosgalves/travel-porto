@@ -1,7 +1,5 @@
 import { Map, Bookmark, Settings } from 'lucide-react';
 import { Button } from './ui/button';
-import { useTranslation } from '../lib/i18n';
-import { useLanguage } from '../contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 
 export type MobileTab = 'map' | 'saved' | 'settings';
@@ -11,21 +9,19 @@ interface BottomNavProps {
   onTabChange: (tab: MobileTab) => void;
 }
 
-const TABS: { id: MobileTab; icon: typeof Map; labelKey: 'nav.map' | 'nav.savedStops' | 'nav.settings' }[] = [
-  { id: 'map', icon: Map, labelKey: 'nav.map' },
-  { id: 'saved', icon: Bookmark, labelKey: 'nav.savedStops' },
-  { id: 'settings', icon: Settings, labelKey: 'nav.settings' },
+const TABS: { id: MobileTab; icon: typeof Map }[] = [
+  { id: 'map', icon: Map },
+  { id: 'saved', icon: Bookmark },
+  { id: 'settings', icon: Settings },
 ];
 
 export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
-  const { language } = useLanguage();
-  const t = useTranslation(language);
 
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-[250] flex items-center justify-around border-t border-border bg-background/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom)] md:hidden"
     >
-      {TABS.map(({ id, icon: Icon, labelKey }) => (
+      {TABS.map(({ id, icon: Icon }) => (
         <Button
           key={id}
           variant="ghost"
