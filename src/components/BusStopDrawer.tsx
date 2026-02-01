@@ -160,6 +160,15 @@ export default function BusStopDrawer({
   const formatTime = (time: string) =>
     time.length >= 5 ? time.slice(0, 5) : time;
 
+  const toHHMM = (t: string) => (t ?? '').trim().slice(0, 5) || '00:00';
+
+  /** True if trip arrival time is before current time (HH:MM comparison). */
+  function isArrivalOld(arrivalTime: string): boolean {
+    const now = new Date();
+    const nowHHMM = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    return toHHMM(arrivalTime) < nowHHMM;
+  }
+
   type DisplayArrival =
     | {
         type: 'realtime';
@@ -204,11 +213,26 @@ export default function BusStopDrawer({
       })),
   ];
 
-  const routeIds = Array.from(new Set(displayItems.map((d) => d.route_id))).sort();
+  const byArrivalTime = [...displayItems].sort(
+    (a, b) => toHHMM(a.arrivalTime).localeCompare(toHHMM(b.arrivalTime))
+  );
+
+  const firstFutureIndex = byArrivalTime.findIndex(
+    (item) => !isArrivalOld(item.arrivalTime)
+  );
+
+  /** Show arrival only from the first trip with arrival_time >= current time. */
+  function shouldShowArrival(index: number): boolean {
+    return firstFutureIndex >= 0 && index >= firstFutureIndex;
+  }
+
+  const displayItemsFromNow = byArrivalTime.filter((_, i) => shouldShowArrival(i));
+
+  const routeIds = Array.from(new Set(displayItemsFromNow.map((d) => d.route_id))).sort();
   const visibleArrivals =
     enabledRoutes.size === 0
-      ? displayItems
-      : displayItems.filter((d) => enabledRoutes.has(d.route_id));
+      ? displayItemsFromNow
+      : displayItemsFromNow.filter((d) => enabledRoutes.has(d.route_id));
 
   if (!open) return null;
 
