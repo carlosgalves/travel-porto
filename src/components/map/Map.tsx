@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -26,10 +26,19 @@ const DefaultIcon = L.icon({
   popupAnchor: [1, -34],
   shadowSize: [41, 41]
 });
-
 L.Marker.prototype.options.icon = DefaultIcon;
 
 const PORTO_CENTER: [number, number] = [41.1579, -8.6291];
+
+const GPS_ALERT_DISMISSED_KEY = 'travel-porto-gps-alert-dismissed';
+
+function loadGpsAlertDismissed(): boolean {
+  try {
+    return localStorage.getItem(GPS_ALERT_DISMISSED_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
 
 function MapCenter({ center }: { center: [number, number] }) {
   const map = useMap();
@@ -87,13 +96,24 @@ export default function Map({ className }: MapProps) {
   const { theme } = useTheme();
   const { language } = useLanguage();
   const t = useTranslation(language);
-  const { mapInstance, setMapInstance, setUserPosition, setHasLocationPermission, setIsCenteredOnUser, userPosition } = useMapContext();
+  const { mapInstance, setMapInstance, setUserPosition, setHasLocationPermission, setIsCenteredOnUser, userPosition, setRequestLocation } = useMapContext();
   const [position, setPosition] = useState<[number, number] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ErrorType>(null);
+  const [gpsAlertDismissed, setGpsAlertDismissed] = useState(loadGpsAlertDismissed);
   const [selectedStop, setSelectedStop] = useState<BusStop | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [bearing, setBearing] = useState<number | null>(null);
+  const watchIdRef = useRef<number | null>(null);
+
+  const persistGpsAlertDismissed = useCallback((dismissed: boolean) => {
+    setGpsAlertDismissed(dismissed);
+    try {
+      localStorage.setItem(GPS_ALERT_DISMISSED_KEY, dismissed ? 'true' : 'false');
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const [urlStopId, setUrlStopId] = useState<string | null>(() => {
     return new URLSearchParams(window.location.search).get('stop');
@@ -176,63 +196,73 @@ export default function Map({ className }: MapProps) {
     };
   }, []);
   
-  useEffect(() => {
-    if ('geolocation' in navigator) {
-      let watchId: number | null = null;
-      
-      const geoOptions = {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-      };
-
-      navigator.geolocation.getCurrentPosition(
-        (geoPosition) => {
-          const { latitude, longitude, heading } = geoPosition.coords;
-          const userPos: [number, number] = [latitude, longitude];
-          setPosition(userPos);
-          setUserPosition(userPos);
-          setHasLocationPermission(true);
-          setBearing(heading ?? null);
-          setLoading(false);
-
-          watchId = navigator.geolocation.watchPosition(
-            (geoPosition) => {
-              const { latitude, longitude, heading } = geoPosition.coords;
-              const userPos: [number, number] = [latitude, longitude];
-              setPosition(userPos);
-              setUserPosition(userPos);
-              setBearing(heading ?? null);
-            },
-            (err) => {
-              console.error('Geolocation watch error:', err);
-            },
-            geoOptions
-          );
-        },
-        (err) => {
-          console.error('Geolocation error:', err);
-          // Only set location error if we don't already have an internet connection error
-          setError((prevError) => prevError === 'noInternetConnection' ? prevError : 'locationError');
-          setPosition(PORTO_CENTER);
-          setHasLocationPermission(false);
-          setLoading(false);
-        },
-        geoOptions
-      );
-
-      return () => {
-        if (watchId !== null) {
-          navigator.geolocation.clearWatch(watchId);
-        }
-      };
-    } else {
-      setError((prevError) => prevError === 'noInternetConnection' ? prevError : 'geolocationNotSupported');
+  const doRequestLocation = useCallback(() => {
+    if (!('geolocation' in navigator)) {
+      setError((prev) => (prev === 'noInternetConnection' ? prev : 'geolocationNotSupported'));
       setPosition(PORTO_CENTER);
       setHasLocationPermission(false);
       setLoading(false);
+      return;
     }
-  }, [setUserPosition, setHasLocationPermission]);
+    const geoOptions = {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0,
+    };
+    navigator.geolocation.getCurrentPosition(
+      (geoPosition) => {
+        const { latitude, longitude, heading } = geoPosition.coords;
+        const userPos: [number, number] = [latitude, longitude];
+        setPosition(userPos);
+        setUserPosition(userPos);
+        setHasLocationPermission(true);
+        setBearing(heading ?? null);
+        setLoading(false);
+        persistGpsAlertDismissed(false);
+        setError((prev) => (prev === 'locationError' || prev === 'geolocationNotSupported' ? null : prev));
+        if (watchIdRef.current !== null) {
+          navigator.geolocation.clearWatch(watchIdRef.current);
+        }
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          (gp) => {
+            const { latitude, longitude, heading: h } = gp.coords;
+            const pos: [number, number] = [latitude, longitude];
+            setPosition(pos);
+            setUserPosition(pos);
+            setBearing(h ?? null);
+            persistGpsAlertDismissed(false);
+          },
+          (err) => {
+            console.error('Geolocation watch error:', err);
+          },
+          geoOptions
+        );
+      },
+      (err) => {
+        console.error('Geolocation error:', err);
+        setError((prev) => (prev === 'noInternetConnection' ? prev : 'locationError'));
+        setPosition(PORTO_CENTER);
+        setHasLocationPermission(false);
+        setLoading(false);
+      },
+      geoOptions
+    );
+  }, [setUserPosition, setHasLocationPermission, persistGpsAlertDismissed]);
+
+  useEffect(() => {
+    doRequestLocation();
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+    };
+  }, [doRequestLocation]);
+
+  useEffect(() => {
+    setRequestLocation(() => doRequestLocation);
+    return () => setRequestLocation(() => () => {});
+  }, [doRequestLocation, setRequestLocation]);
 
   const mapCenter = position ?? PORTO_CENTER;
 
@@ -247,6 +277,9 @@ export default function Map({ className }: MapProps) {
     if (error === 'noInternetConnection') return 'error';
     return 'alert';
   };
+
+  const isGpsError = (e: ErrorType): boolean =>
+    e === 'locationError' || e === 'geolocationNotSupported';
 
   return (
     <div className={className || 'w-full h-full'} style={{ position: 'relative', zIndex: 1 }}>
@@ -265,11 +298,17 @@ export default function Map({ className }: MapProps) {
           </div>
         </div>
       )}
-      {error && (
+      {error && !(isGpsError(error) && gpsAlertDismissed) && (
         <div className="absolute top-3 left-4 right-4 z-[200] max-w-md mx-auto pointer-events-auto">
           <Alert
             variant={getErrorVariant()}
-            onClose={() => setError(null)}
+            onClose={() => {
+              if (isGpsError(error)) {
+                persistGpsAlertDismissed(true);
+              } else {
+                setError(null);
+              }
+            }}
           >
             <AlertDescription>
               {getErrorMessage()}
@@ -294,7 +333,7 @@ export default function Map({ className }: MapProps) {
           subdomains="abcd"
         />
         {userPosition && (
-          <Marker position={userPosition} icon={createUserLocationIcon(bearing)}>
+          <Marker position={userPosition} icon={createUserLocationIcon(bearing, isGpsError(error))}>
             <Popup>
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">

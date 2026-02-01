@@ -19,7 +19,7 @@ interface HeaderProps {
 export default function Header({ isMobile, mobileTab }: HeaderProps) {
   const { language } = useLanguage();
   const t = useTranslation(language);
-  const { mapInstance, userPosition, hasLocationPermission, isCenteredOnUser, setIsCenteredOnUser, isSavedStop } = useMapContext();
+  const { mapInstance, userPosition, hasLocationPermission, isCenteredOnUser, setIsCenteredOnUser, isSavedStop, requestLocation } = useMapContext();
   const [headerSearch, setHeaderSearch] = useState('');
   const [allStops, setAllStops] = useState<BusStop[]>([]);
 
@@ -45,6 +45,7 @@ export default function Header({ isMobile, mobileTab }: HeaderProps) {
   };
 
   const handleReCenter = () => {
+    requestLocation();
     if (mapInstance && userPosition) {
       centerMap(mapInstance, userPosition);
       setIsCenteredOnUser(true);
@@ -121,7 +122,6 @@ export default function Header({ isMobile, mobileTab }: HeaderProps) {
                   variant="ghost"
                   size="icon"
                   onClick={handleReCenter}
-                  disabled={!hasLocationPermission || !userPosition}
                 >
                   {getLocationIcon()}
                 </Button>
@@ -144,7 +144,6 @@ export default function Header({ isMobile, mobileTab }: HeaderProps) {
               variant="ghost"
               size="icon"
               onClick={handleReCenter}
-              disabled={!hasLocationPermission || !userPosition}
             >
               {getLocationIcon()}
             </Button>

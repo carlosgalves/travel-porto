@@ -39,6 +39,8 @@ interface MapContextType {
   addSavedStop: (stop: BusStop) => void;
   removeSavedStop: (stopId: string) => void;
   isSavedStop: (stopId: string) => boolean;
+  requestLocation: () => void;
+  setRequestLocation: (fn: () => void) => void;
 }
 
 const MapContext = createContext<MapContextType | undefined>(undefined);
@@ -50,6 +52,7 @@ export function MapProvider({ children }: { children: ReactNode }) {
   const [hasLocationPermission, setHasLocationPermission] = useState<boolean>(true);
   const [isCenteredOnUser, setIsCenteredOnUser] = useState<boolean>(false);
   const [savedStops, setSavedStops] = useState<BusStop[]>(loadSavedStops);
+  const [requestLocation, setRequestLocation] = useState<() => void>(() => () => {});
 
   useEffect(() => {
     localStorage.setItem(SAVED_STOPS_STORAGE_KEY, JSON.stringify(savedStops));
@@ -74,18 +77,12 @@ export function MapProvider({ children }: { children: ReactNode }) {
   return (
     <MapContext.Provider
       value={{
-        mapInstance,
-        userPosition,
-        hasLocationPermission,
-        isCenteredOnUser,
-        savedStops,
-        setMapInstance,
-        setUserPosition,
-        setHasLocationPermission,
-        setIsCenteredOnUser,
-        addSavedStop,
-        removeSavedStop,
-        isSavedStop,
+        mapInstance, setMapInstance,
+        userPosition, setUserPosition,
+        hasLocationPermission, setHasLocationPermission,
+        isCenteredOnUser, setIsCenteredOnUser,
+        savedStops, addSavedStop, removeSavedStop, isSavedStop,
+        requestLocation, setRequestLocation,
       }}
     >
       {children}
