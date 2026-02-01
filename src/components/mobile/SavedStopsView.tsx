@@ -50,7 +50,7 @@ export function SavedStopsView({ onSelectStop }: SavedStopsViewProps = {}) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('menu.searchSavedStops')}
-            className="w-full rounded-md border border-input bg-background py-2 pl-8 pr-8 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            className="w-full rounded-md border border-input bg-background py-2 pl-8 pr-8 text-base outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
           />
           {search.trim() !== '' && (
             <Button
