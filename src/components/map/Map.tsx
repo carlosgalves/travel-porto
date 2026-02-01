@@ -105,6 +105,7 @@ export default function Map({ className }: MapProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [bearing, setBearing] = useState<number | null>(null);
   const watchIdRef = useRef<number | null>(null);
+  const initialCenterRef = useRef<[number, number] | null>(null);
 
   const persistGpsAlertDismissed = useCallback((dismissed: boolean) => {
     setGpsAlertDismissed(dismissed);
@@ -264,7 +265,10 @@ export default function Map({ className }: MapProps) {
     return () => setRequestLocation(() => () => {});
   }, [doRequestLocation, setRequestLocation]);
 
-  const mapCenter = position ?? PORTO_CENTER;
+  if (position !== null && initialCenterRef.current === null) {
+    initialCenterRef.current = position;
+  }
+  const mapCenter = initialCenterRef.current ?? position ?? PORTO_CENTER;
 
   const getErrorMessage = (): string => {
     if (error === 'locationError') return t('errors.locationError');
