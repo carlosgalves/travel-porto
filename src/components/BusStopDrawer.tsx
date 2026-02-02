@@ -45,6 +45,18 @@ export default function BusStopDrawer({
   const [arrivalsLoading, setArrivalsLoading] = useState(false);
   const [arrivalsError, setArrivalsError] = useState<string | null>(null);
   const [enabledRoutes, setEnabledRoutes] = useState<Set<string>>(new Set());
+  const [, setArrivalAgeTick] = useState(0);
+
+  /** check if trip is old every 30 seconds */
+  const ARRIVAL_AGE_CHECK_INTERVAL_MS = 30_000;
+  useEffect(() => {
+    if (!open || !stop) return;
+    const intervalId = setInterval(
+      () => setArrivalAgeTick((t) => t + 1),
+      ARRIVAL_AGE_CHECK_INTERVAL_MS
+    );
+    return () => clearInterval(intervalId);
+  }, [open, stop?.id]);
 
   useEffect(() => {
     if (!mapInstance || !stop || !open) {
@@ -221,12 +233,12 @@ export default function BusStopDrawer({
     (item) => !isArrivalOld(item.arrivalTime)
   );
 
-  /** Show arrival only from the first trip with arrival_time >= current time. */
-  function shouldShowArrival(index: number): boolean {
-    return firstFutureIndex >= 0 && index >= firstFutureIndex;
-  }
-
-  const displayItemsFromNow = byArrivalTime.filter((_, i) => shouldShowArrival(i));
+  /** Show arrivals from the first future one. If all arrivals are in the past , show the ones from the next day. */
+  const maxScheduledToShow = 15;
+  const displayItemsFromNow =
+    firstFutureIndex >= 0
+      ? byArrivalTime.slice(firstFutureIndex)
+      : byArrivalTime.slice(0, maxScheduledToShow);
 
   const routeIds = Array.from(new Set(displayItemsFromNow.map((d) => d.route_id))).sort();
   const visibleArrivals =
@@ -386,32 +398,29 @@ export default function BusStopDrawer({
                             borderLeftColor: `var(--route-${item.route_id}, var(--border))`,
                           }}
                         >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-2 shrink-0">
-                              
-                              <span
-                                className={[
-                                  'inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold',
-                                  item.route_id.endsWith('M')
-                                    ? 'border border-transparent dark:border-white/80'
-                                    : '',
-                                ].join(' ')}
-                                style={{
-                                  backgroundColor: `var(--route-${item.route_id}, var(--muted))`,
-                                  color: `var(--route-text-${item.route_id}, var(--foreground))`,
-                                }}
-                              >
-                                {item.route_id}
-                              </span>
-                            </div>
-                            <div className="min-w-0 flex-1 text-base font-medium text-foreground truncate">
+                          <div className="flex items-start gap-2 min-w-0">
+                            <span
+                              className={[
+                                'inline-flex shrink-0 items-center rounded px-2 py-0.5 text-xs font-semibold',
+                                item.route_id.endsWith('M')
+                                  ? 'border border-transparent dark:border-white/80'
+                                  : '',
+                              ].join(' ')}
+                              style={{
+                                backgroundColor: `var(--route-${item.route_id}, var(--muted))`,
+                                color: `var(--route-text-${item.route_id}, var(--foreground))`,
+                              }}
+                            >
+                              {item.route_id}
+                            </span>
+                            <span className="min-w-0 flex-1 break-words text-base font-medium text-foreground">
                               {item.headsign}
-                            </div>
-                            <div className="text-sm font-bold tabular-nums text-right shrink-0">
+                            </span>
+                            <span className="text-sm font-bold tabular-nums shrink-0 min-w-[3.5rem] text-right">
                               {item.raw.arrival_minutes < 1
                                 ? t('busStop.arrivalNow')
                                 : `${item.raw.arrival_minutes} min`}
-                            </div>
+                            </span>
                           </div>
 
                           {isDebug && (
@@ -451,29 +460,27 @@ export default function BusStopDrawer({
                                   borderLeftColor: `var(--route-${item.route_id}, var(--border))`,
                                 }}
                               >
-                                <div className="flex items-center justify-between gap-3">
-                                  <div className="flex items-center gap-2 shrink-0">
-                                    <span
-                                      className={[
-                                        'inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold',
-                                        item.route_id.endsWith('M')
-                                          ? 'border border-transparent dark:border-white/80'
-                                          : '',
-                                      ].join(' ')}
-                                      style={{
-                                        backgroundColor: `var(--route-${item.route_id}, var(--muted))`,
-                                        color: `var(--route-text-${item.route_id}, var(--foreground))`,
-                                      }}
-                                    >
-                                      {item.route_id}
-                                    </span>
-                                  </div>
-                                  <div className="min-w-0 flex-1 text-base font-medium text-foreground truncate">
+                                <div className="flex items-start gap-2 min-w-0">
+                                  <span
+                                    className={[
+                                      'inline-flex shrink-0 items-center rounded px-2 py-0.5 text-xs font-semibold',
+                                      item.route_id.endsWith('M')
+                                        ? 'border border-transparent dark:border-white/80'
+                                        : '',
+                                    ].join(' ')}
+                                    style={{
+                                      backgroundColor: `var(--route-${item.route_id}, var(--muted))`,
+                                      color: `var(--route-text-${item.route_id}, var(--foreground))`,
+                                    }}
+                                  >
+                                    {item.route_id}
+                                  </span>
+                                  <span className="min-w-0 flex-1 break-words text-base font-medium text-foreground">
                                     {item.headsign}
-                                  </div>
-                                  <div className="text-sm font-medium tabular-nums text-right shrink-0">
+                                  </span>
+                                  <span className="text-sm font-medium tabular-nums shrink-0 min-w-[3.5rem] text-right">
                                     {formatTime(item.arrivalTime)}
-                                  </div>
+                                  </span>
                                 </div>
 
                                 {isDebug && (
