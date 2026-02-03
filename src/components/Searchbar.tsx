@@ -117,7 +117,7 @@ export default function Searchbar({
                     }}
                   >
                     {renderItemPrefix?.(stop)}
-                    <span className="min-w-0 flex-1 truncate">{stop.name}</span>
+                    <span className="min-w-0 flex-1 break-words">{stop.name}</span>
                     <span className="shrink-0 text-muted-foreground text-xs">
                       {stop.id}
                     </span>
@@ -143,7 +143,7 @@ export default function Searchbar({
                   }}
                 >
                   {renderItemPrefix?.(stop)}
-                  <span className="min-w-0 flex-1 truncate">{stop.name}</span>
+                  <span className="min-w-0 flex-1 break-words">{stop.name}</span>
                   <span className="shrink-0 text-muted-foreground text-xs">
                     {stop.id}
                   </span>

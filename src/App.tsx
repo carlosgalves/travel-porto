@@ -9,6 +9,7 @@ import Map from './components/map/Map'
 import { BottomNav, type MobileTab } from './components/BottomNav'
 import { Sidebar } from './components/Sidebar'
 import { SavedStopsView } from './components/mobile/SavedStopsView'
+import { RoutesView } from './components/mobile/RoutesView'
 import { SettingsView } from './components/mobile/SettingsView'
 import './App.css'
 
@@ -30,15 +31,20 @@ function App() {
     const path =
       tab === 'map'
         ? tabToPathname(tab) + window.location.search
-        : tabToPathname(tab)
+        : tabToPathname(tab);
     window.history.pushState({}, '', path)
     setMobileTab(tab)
   }
 
-  const handleSelectStopFromSaved = (stop: { id: string }) => {
+  const handleSelectStop = (stop: { id: string }) => {
     const path = tabToPathname('map') + `?stop=${encodeURIComponent(stop.id)}`
     window.history.pushState({}, '', path)
     setMobileTab('map')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+  }
+
+  const handleSelectStopFromSaved = (stop: { id: string }) => {
+    handleSelectStop(stop)
   }
 
   return (
@@ -52,6 +58,9 @@ function App() {
                 {isMobile && mobileTab === 'map' && <Map className="h-full w-full" />}
                 {isMobile && mobileTab === 'saved' && (
                   <SavedStopsView onSelectStop={handleSelectStopFromSaved} />
+                )}
+                {isMobile && mobileTab === 'routes' && (
+                  <RoutesView onSelectStop={handleSelectStop} />
                 )}
                 {isMobile && mobileTab === 'settings' && <SettingsView />}
                 {!isMobile && <Map className="h-full w-full" />}

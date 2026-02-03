@@ -64,6 +64,7 @@ export default function Header({ isMobile, mobileTab }: HeaderProps) {
 
   const showMobileMapHeader = isMobile && mobileTab === 'map';
   const showMobileSavedHeader = isMobile && mobileTab === 'saved';
+  const showMobileRoutesHeader = isMobile && mobileTab === 'routes';
   const showMobileSettingsHeader = isMobile && mobileTab === 'settings';
   const showDesktopHeader = !isMobile;
 
@@ -132,6 +133,10 @@ export default function Header({ isMobile, mobileTab }: HeaderProps) {
         {/* Mobile saved tab */}
         {showMobileSavedHeader && (
           <h1 className="flex-1 text-lg font-semibold md:hidden">{t('menu.savedStops')}</h1>
+        )}
+        {/* Mobile routes tab */}
+        {showMobileRoutesHeader && (
+          <h1 className="flex-1 text-lg font-semibold md:hidden">{t('nav.routes')}</h1>
         )}
         {/* Mobile settings tab */}
         {showMobileSettingsHeader && (

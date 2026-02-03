@@ -31,7 +31,17 @@
     "back": "Voltar",
     "map": "Mapa",
     "savedStops": "Paragens guardadas",
+    "routes": "Linhas",
     "settings": "Definições"
+  },
+  "routes": {
+    "loading": "A carregar linhas...",
+    "loadError": "Não foi possível carregar as linhas.",
+    "noRoutes": "Nenhuma linha encontrada.",
+    "selectDirection": "Selecionar direção",
+    "stopsLabel": "Paragens",
+    "loadingStops": "A carregar paragens...",
+    "noStops": "Sem paragens para esta direção."
   },
   "menu": {
     "settings": "Definições",

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Map, Bookmark, Settings, ChevronLeft, X, Moon, Sun, Check, Search } from 'lucide-react';
+import { Map, Bookmark, Settings, Route, ChevronLeft, X, Moon, Sun, Check, Search } from 'lucide-react';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
 import { useMapContext } from '../contexts/MapContext';
@@ -9,10 +9,11 @@ import { useTranslation } from '../lib/i18n';
 import { filterStopsByQuery } from '../lib/search';
 import { cn } from '@/lib/utils';
 import type { BusStop } from '../api/types';
+import { RoutesView } from './mobile/RoutesView';
 
-export type SidebarPanel = 'map' | 'saved' | 'settings';
+export type SidebarPanel = 'map' | 'saved' | 'settings' | 'routes';
 
-type SidebarView = 'menu' | 'saved' | 'settings';
+type SidebarView = 'menu' | 'saved' | 'settings' | 'routes';
 
 function openStop(stop: BusStop) {
   const url = new URL(window.location.href);
@@ -24,6 +25,7 @@ function openStop(stop: BusStop) {
 const MENU_ITEMS: { id: SidebarPanel; icon: typeof Map }[] = [
   { id: 'map', icon: Map },
   { id: 'saved', icon: Bookmark },
+  { id: 'routes', icon: Route },
   { id: 'settings', icon: Settings },
 ];
 
@@ -46,7 +48,7 @@ export function Sidebar() {
     setView(id);
   };
 
-  const isExpanded = view === 'saved' || view === 'settings';
+  const isExpanded = view === 'saved' || view === 'settings' || view === 'routes';
 
   return (
     <aside
@@ -78,7 +80,7 @@ export function Sidebar() {
         </nav>
       )}
 
-      {(view === 'saved' || view === 'settings') && (
+      {(view === 'saved' || view === 'settings' || view === 'routes') && (
         <>
           <header className="flex shrink-0 items-center gap-2 border-b border-border px-2 py-2">
             <Button
@@ -89,11 +91,14 @@ export function Sidebar() {
             >
               <ChevronLeft className="h-5 w-5" aria-hidden />
             </Button>
-            <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">
-              {view === 'saved' ? t('nav.savedStops') : t('nav.settings')}
+            <h2 className="min-w-0 flex-1 break-words text-sm font-semibold">
+              {view === 'saved' ? t('nav.savedStops') : view === 'routes' ? t('nav.routes') : t('nav.settings')}
             </h2>
           </header>
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            {view === 'routes' && (
+              <RoutesView />
+            )}
             {view === 'saved' && (
               <>
                 <div className="shrink-0 p-3">
@@ -141,7 +146,7 @@ export function Sidebar() {
                               }
                             }}
                           >
-                            <span className="min-w-0 flex-1 truncate font-medium">{stop.name}</span>
+                            <span className="min-w-0 flex-1 break-words font-medium">{stop.name}</span>
                             <span className="shrink-0 text-muted-foreground text-xs">{stop.id}</span>
                             <Button
                               variant="ghost"

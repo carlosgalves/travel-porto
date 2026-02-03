@@ -90,7 +90,7 @@ export function SavedStopsView({ onSelectStop }: SavedStopsViewProps = {}) {
                     }
                   }}
                 >
-                  <span className="min-w-0 flex-1 truncate font-medium">{stop.name}</span>
+                  <span className="min-w-0 flex-1 break-words font-medium">{stop.name}</span>
                   <span className="shrink-0 text-muted-foreground text-xs">{stop.id}</span>
                   <Button
                     variant="ghost"

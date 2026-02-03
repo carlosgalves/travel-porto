@@ -10,10 +10,9 @@ const DropdownMenuContext = React.createContext<DropdownMenuContextType | undefi
 interface DropdownMenuProps {
   children: React.ReactNode;
   trigger: React.ReactNode;
-  align?: 'left' | 'right';
 }
 
-export function DropdownMenu({ children, trigger, align = 'right' }: DropdownMenuProps) {
+export function DropdownMenu({ children, trigger }: DropdownMenuProps) {
   const [open, setOpen] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
 
@@ -36,13 +35,12 @@ export function DropdownMenu({ children, trigger, align = 'right' }: DropdownMen
 
   return (
     <DropdownMenuContext.Provider value={{ closeMenu }}>
-      <div className="relative" ref={menuRef}>
-        <div onClick={() => setOpen(!open)}>{trigger}</div>
+      <div className="relative w-full" ref={menuRef}>
+        <div className="w-full" onClick={() => setOpen(!open)}>{trigger}</div>
         {open && (
           <div
             className={cn(
-              'absolute z-[250] mt-2 min-w-[200px] rounded-md border bg-background shadow-lg',
-              align === 'right' ? 'right-0' : 'left-0'
+              'absolute z-[250] mt-2 left-0 right-0 w-full min-w-0 rounded-md border border-border bg-background shadow-lg'
             )}
           >
             {children}

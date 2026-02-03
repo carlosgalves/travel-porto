@@ -31,7 +31,17 @@
     "back": "Back",
     "map": "Map",
     "savedStops": "Saved stops",
+    "routes": "Routes",
     "settings": "Settings"
+  },
+  "routes": {
+    "loading": "Loading routes...",
+    "loadError": "Unable to load routes.",
+    "noRoutes": "No routes found.",
+    "selectDirection": "Select direction",
+    "stopsLabel": "Stops",
+    "loadingStops": "Loading stops...",
+    "noStops": "No stops for this direction."
   },
   "menu": {
     "settings": "Settings",

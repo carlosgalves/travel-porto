@@ -1,8 +1,8 @@
-import { Map, Bookmark, Settings } from 'lucide-react';
+import { Map, Bookmark, Settings, Route } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 
-export type MobileTab = 'map' | 'saved' | 'settings';
+export type MobileTab = 'map' | 'saved' | 'settings' | 'routes';
 
 interface BottomNavProps {
   activeTab: MobileTab;
@@ -12,6 +12,7 @@ interface BottomNavProps {
 const TABS: { id: MobileTab; icon: typeof Map }[] = [
   { id: 'map', icon: Map },
   { id: 'saved', icon: Bookmark },
+  { id: 'routes', icon: Route },
   { id: 'settings', icon: Settings },
 ];
 

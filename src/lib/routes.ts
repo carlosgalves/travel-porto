@@ -4,11 +4,13 @@ const PATHS: Record<MobileTab, string> = {
   map: '/',
   saved: '/saved',
   settings: '/settings',
+  routes: '/routes',
 };
 
 export function pathnameToTab(pathname: string): MobileTab {
   if (pathname === '/saved') return 'saved';
   if (pathname === '/settings') return 'settings';
+  if (pathname === '/routes') return 'routes';
   return 'map';
 }
 
