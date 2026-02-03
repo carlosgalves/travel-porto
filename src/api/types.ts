@@ -100,3 +100,18 @@ export interface RouteStopsResponse {
     directions: RouteDirectionStops[];
   };
 }
+
+export interface RouteShapePoint {
+  sequence: number;
+  coordinates: { latitude: number; longitude: number };
+}
+
+export interface RouteShapeItem {
+  shape_id: string;
+  direction_id: number;
+  points: RouteShapePoint[];
+}
+
+export interface RouteShapesResponse {
+  data: RouteShapeItem[];
+}

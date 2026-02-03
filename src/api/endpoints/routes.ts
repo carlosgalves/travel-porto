@@ -1,5 +1,5 @@
 import { API_BASE_URL, API_KEY } from '../config';
-import type { Route, RoutesResponse, RouteStopsResponse } from '../types';
+import type { Route, RoutesResponse, RouteStopsResponse, RouteShapesResponse } from '../types';
 
 let routesPromise: Promise<Route[]> | null = null;
 
@@ -82,3 +82,29 @@ export async function fetchRouteStops(
   const data: RouteStopsResponse = await response.json();
   return data.data;
 }
+
+export async function fetchRouteShapes(
+  routeId: string,
+  directionId: number
+): Promise<RouteShapesResponse['data']> {
+  const params = new URLSearchParams({ direction_id: String(directionId) });
+  const response = await fetch(
+    `${API_BASE_URL}/stcp/routes/${encodeURIComponent(routeId)}/shapes?${params}`,
+    {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        'X-API-Key': API_KEY,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch route shapes: ${response.statusText}`);
+  }
+
+  const data: RouteShapesResponse = await response.json();
+  return data.data;
+}
+
+

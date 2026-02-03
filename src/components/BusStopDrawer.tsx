@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
 import { Toggle } from './ui/toggle';
@@ -16,7 +16,9 @@ import {
   fetchBusRealtimeArrivals,
   invalidateRealtimeArrivalsCache,
 } from '../api/endpoints/stops';
+import { fetchRoutes, fetchRouteShapes } from '../api/endpoints/routes';
 import { centerMap } from '../lib/map';
+import { toHex } from '../lib/utils';
 import L from 'leaflet';
 
 
@@ -48,6 +50,7 @@ export default function BusStopDrawer({
   const [arrivalsLoading, setArrivalsLoading] = useState(false);
   const [arrivalsError, setArrivalsError] = useState<string | null>(null);
   const [enabledRoutes, setEnabledRoutes] = useState<Set<string>>(new Set());
+  const routeShapeLayersRef = useRef<L.Polyline[]>([]);
 
   useEffect(() => {
     if (!mapInstance || !stop || !open) {
@@ -149,6 +152,101 @@ export default function BusStopDrawer({
 
     return () => clearInterval(intervalId);
   }, [open, stop?.id]);
+
+  // Draw route shapes on the map when drawer is open
+  useEffect(() => {
+    const layers = routeShapeLayersRef.current;
+    layers.forEach((layer) => {
+      if (mapInstance && layer.getPane()) layer.remove();
+    });
+    routeShapeLayersRef.current = [];
+
+    if (!open || !mapInstance || !stop) return;
+
+    const realtimeTripIds = new Set(realtimeArrivals.map((r) => r.trip.id));
+    const displayItems: Array<{ route_id: string; direction_id: number; arrivalTime: string }> = [
+      ...realtimeArrivals.map((r) => ({
+        route_id: r.trip.route_id,
+        direction_id: r.trip.direction_id,
+        arrivalTime: r.realtime_arrival_time,
+      })),
+      ...arrivals
+        .filter((s) => !realtimeTripIds.has(s.trip.id))
+        .map((s) => ({
+          route_id: s.trip.route_id,
+          direction_id: s.trip.direction_id,
+          arrivalTime: s.arrival_time,
+        })),
+    ];
+    const byTime = [...displayItems].sort(
+      (a, b) => new Date(a.arrivalTime).getTime() - new Date(b.arrivalTime).getTime()
+    );
+    const firstFuture = byTime.findIndex((item) => {
+      const t = new Date(item.arrivalTime);
+      return !Number.isNaN(t.getTime()) && t.getTime() >= Date.now();
+    });
+    const fromNow = firstFuture >= 0 ? byTime.slice(firstFuture) : byTime;
+    const visible =
+      enabledRoutes.size === 0 ? fromNow : fromNow.filter((d) => enabledRoutes.has(d.route_id));
+    const pairKeys = new Set(visible.map((d) => `${d.route_id}:${d.direction_id}`));
+    const routeDirectionPairs = Array.from(pairKeys).map((key) => {
+      const [route_id, direction_id] = key.split(':');
+      return { route_id, direction_id: Number(direction_id) };
+    });
+
+    if (routeDirectionPairs.length === 0) return;
+
+    let cancelled = false;
+
+    void fetchRoutes().then((routes) => {
+      if (cancelled || !mapInstance) return;
+      const routeById = new Map(routes.map((r) => [r.id, r]));
+
+      const drawPromises = routeDirectionPairs.map(async ({ route_id, direction_id }) => {
+        if (cancelled || !mapInstance) return;
+        try {
+          const shapes = await fetchRouteShapes(route_id, direction_id);
+          if (cancelled || !mapInstance) return;
+          const route = routeById.get(route_id);
+          const color = toHex(route?.route_color ?? '#000000');
+          for (const shape of shapes) {
+            if (cancelled || !mapInstance) break;
+            const sorted = [...(shape.points ?? [])].sort((a, b) => a.sequence - b.sequence);
+            const latlngs: [number, number][] = sorted.map((p) => [
+              p.coordinates.latitude,
+              p.coordinates.longitude,
+            ]);
+            if (latlngs.length < 2) continue;
+            const polyline = L.polyline(latlngs, {
+              color,
+              weight: 5,
+              opacity: 0.9,
+            }).addTo(mapInstance);
+            routeShapeLayersRef.current.push(polyline);
+          }
+        } catch {
+          // ignore per-route errors
+        }
+      });
+
+      void Promise.all(drawPromises);
+    });
+
+    return () => {
+      cancelled = true;
+      routeShapeLayersRef.current.forEach((layer) => {
+        if (layer.getPane()) layer.remove();
+      });
+      routeShapeLayersRef.current = [];
+    };
+  }, [
+    open,
+    mapInstance,
+    stop?.id,
+    arrivals,
+    realtimeArrivals,
+    enabledRoutes,
+  ]);
 
   const handleReCenter = () => {
     if (mapInstance && stop) {
