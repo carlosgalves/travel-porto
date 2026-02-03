@@ -1,10 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useState, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type L from 'leaflet';
-import type { BusStop } from '../api/types';
+import type { BusStop, Route } from '../api/types';
 import { fetchRoutes, fetchRouteStopsAll } from '../api/endpoints/routes';
 
 const SAVED_STOPS_STORAGE_KEY = 'travel-porto-saved-stops';
+const SAVED_ROUTES_STORAGE_KEY = 'travel-porto-saved-routes';
 
 function loadSavedStops(): BusStop[] {
   try {
@@ -27,6 +28,25 @@ function loadSavedStops(): BusStop[] {
   }
 }
 
+function loadSavedRoutes(): Route[] {
+  try {
+    const raw = localStorage.getItem(SAVED_ROUTES_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is Route =>
+        item &&
+        typeof item === 'object' &&
+        typeof (item as Route).id === 'string' &&
+        typeof (item as Route).short_name === 'string' &&
+        typeof (item as Route).long_name === 'string'
+    );
+  } catch {
+    return [];
+  }
+}
+
 export type EnabledRouteIds = Set<string> | null;
 
 interface MapContextType {
@@ -35,6 +55,7 @@ interface MapContextType {
   hasLocationPermission: boolean;
   isCenteredOnUser: boolean;
   savedStops: BusStop[];
+  savedRoutes: Route[];
   setMapInstance: (map: L.Map | null) => void;
   setUserPosition: (position: [number, number] | null) => void;
   setHasLocationPermission: (hasPermission: boolean) => void;
@@ -42,6 +63,9 @@ interface MapContextType {
   addSavedStop: (stop: BusStop) => void;
   removeSavedStop: (stopId: string) => void;
   isSavedStop: (stopId: string) => boolean;
+  addSavedRoute: (route: Route) => void;
+  removeSavedRoute: (routeId: string) => void;
+  isSavedRoute: (routeId: string) => boolean;
   requestLocation: () => void;
   setRequestLocation: (fn: () => void) => void;
   enabledRouteIds: EnabledRouteIds;
@@ -60,6 +84,7 @@ export function MapProvider({ children }: { children: ReactNode }) {
   const [hasLocationPermission, setHasLocationPermission] = useState<boolean>(true);
   const [isCenteredOnUser, setIsCenteredOnUser] = useState<boolean>(false);
   const [savedStops, setSavedStops] = useState<BusStop[]>(loadSavedStops);
+  const [savedRoutes, setSavedRoutes] = useState<Route[]>(loadSavedRoutes);
   const [requestLocation, setRequestLocation] = useState<() => void>(() => () => {});
 
   const [enabledRouteIds, setEnabledRouteIdsState] = useState<EnabledRouteIds>(null);
@@ -114,6 +139,10 @@ export function MapProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(SAVED_STOPS_STORAGE_KEY, JSON.stringify(savedStops));
   }, [savedStops]);
 
+  useEffect(() => {
+    localStorage.setItem(SAVED_ROUTES_STORAGE_KEY, JSON.stringify(savedRoutes));
+  }, [savedRoutes]);
+
   const addSavedStop = useCallback((stop: BusStop) => {
     setSavedStops((prev) => {
       if (prev.some((s) => s.id === stop.id)) return prev;
@@ -130,6 +159,22 @@ export function MapProvider({ children }: { children: ReactNode }) {
     [savedStops]
   );
 
+  const addSavedRoute = useCallback((route: Route) => {
+    setSavedRoutes((prev) => {
+      if (prev.some((r) => r.id === route.id)) return prev;
+      return [...prev, route];
+    });
+  }, []);
+
+  const removeSavedRoute = useCallback((routeId: string) => {
+    setSavedRoutes((prev) => prev.filter((r) => r.id !== routeId));
+  }, []);
+
+  const isSavedRoute = useCallback(
+    (routeId: string) => savedRoutes.some((r) => r.id === routeId),
+    [savedRoutes]
+  );
+
   return (
     <MapContext.Provider
       value={{
@@ -138,6 +183,7 @@ export function MapProvider({ children }: { children: ReactNode }) {
         hasLocationPermission, setHasLocationPermission,
         isCenteredOnUser, setIsCenteredOnUser,
         savedStops, addSavedStop, removeSavedStop, isSavedStop,
+        savedRoutes, addSavedRoute, removeSavedRoute, isSavedRoute,
         requestLocation, setRequestLocation,
         enabledRouteIds, setEnabledRouteIds,
         stopToRouteIds, loadStopToRouteIds, stopToRouteIdsLoading,

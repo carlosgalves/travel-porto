@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, ChevronDown, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, Loader2, Bookmark } from 'lucide-react';
 import { Button } from '../ui/button';
 import { ScrollArea } from '../ui/scroll-area';
 import {
@@ -8,6 +8,7 @@ import {
   DropdownMenuItem,
 } from '../ui/dropdown-menu';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useMapContext } from '../../contexts/MapContext';
 import { useTranslation } from '../../lib/i18n';
 import { useIsMobile } from '../../lib/useMediaQuery';
 import { tabToPathname } from '../../lib/routes';
@@ -42,6 +43,7 @@ export function RoutesView({ onSelectStop }: RoutesViewProps = {}) {
   const isMobile = useIsMobile();
   const { language } = useLanguage();
   const t = useTranslation(language);
+  const { isSavedRoute, addSavedRoute, removeSavedRoute } = useMapContext();
 
   const handleStopClick = (stopId: string) => {
     if (onSelectStop) {
@@ -228,27 +230,52 @@ export function RoutesView({ onSelectStop }: RoutesViewProps = {}) {
               )}
               {!routesLoading && !routesError && routes.length > 0 && (
                 <ul className="space-y-2">
-                  {routes.map((route) => (
+                  {[...routes]
+                    .sort((a, b) => Number(isSavedRoute(b.id)) - Number(isSavedRoute(a.id)))
+                    .map((route) => (
                     <li key={route.id}>
-                      <button
-                        type="button"
-                        className="flex w-full items-center gap-2 rounded-md border border-border bg-card px-3 py-2.5 text-left transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        onClick={() => handleSelectRoute(route)}
-                      >
-                        <span
-                          className="inline-flex items-center justify-center rounded px-2 py-0.5 text-sm font-semibold shrink-0"
-                          style={{
-                            backgroundColor: toHex(route.route_color),
-                            color: toHex(route.route_text_color),
+                      <div className="flex w-full items-center gap-2 rounded-md border border-border bg-card px-2 py-2.5 transition-colors hover:bg-accent hover:text-accent-foreground focus-within:bg-accent focus-within:text-accent-foreground">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
+                          aria-label={isSavedRoute(route.id) ? t('busStop.unsaveStop') : t('busStop.saveStop')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            if (isSavedRoute(route.id)) {
+                              removeSavedRoute(route.id);
+                            } else {
+                              addSavedRoute(route);
+                            }
                           }}
                         >
-                          {route.short_name}
-                        </span>
-                        <span className="min-w-0 flex-1 text-base font-medium">
-                          {route.long_name}
-                        </span>
-                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      </button>
+                          <Bookmark
+                            className={`h-5 w-5 shrink-0 ${isSavedRoute(route.id) ? 'fill-current text-primary' : ''}`}
+                            aria-hidden
+                          />
+                        </Button>
+                        <button
+                          type="button"
+                          className="flex min-w-0 flex-1 items-center gap-2 py-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset rounded"
+                          onClick={() => handleSelectRoute(route)}
+                        >
+                          <span
+                            className="inline-flex shrink-0 items-center justify-center rounded px-2 py-0.5 text-sm font-semibold"
+                            style={{
+                              backgroundColor: toHex(route.route_color),
+                              color: toHex(route.route_text_color),
+                            }}
+                          >
+                            {route.short_name}
+                          </span>
+                          <span className="min-w-0 flex-1 text-base font-medium truncate">
+                            {route.long_name}
+                          </span>
+                          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        </button>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -271,6 +298,25 @@ export function RoutesView({ onSelectStop }: RoutesViewProps = {}) {
                 <span className="min-w-0 flex-1 text-base font-medium break-words">
                   {view.route.long_name}
                 </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
+                  aria-label={isSavedRoute(view.route.id) ? t('busStop.unsaveStop') : t('busStop.saveStop')}
+                  onClick={() => {
+                    if (isSavedRoute(view.route.id)) {
+                      removeSavedRoute(view.route.id);
+                    } else {
+                      addSavedRoute(view.route);
+                    }
+                  }}
+                >
+                  <Bookmark
+                    className={`h-5 w-5 shrink-0 ${isSavedRoute(view.route.id) ? 'fill-current text-primary' : ''}`}
+                    aria-hidden
+                  />
+                </Button>
               </div>
 
               {view.route.directions && view.route.directions.length > 0 && (

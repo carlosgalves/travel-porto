@@ -36,6 +36,7 @@ export default function Header({ isMobile, mobileTab }: HeaderProps) {
     isCenteredOnUser,
     setIsCenteredOnUser,
     isSavedStop,
+    isSavedRoute,
     requestLocation,
     enabledRouteIds,
     setEnabledRouteIds,
@@ -112,10 +113,12 @@ export default function Header({ isMobile, mobileTab }: HeaderProps) {
     const stopMatches = filterStopsByQuery(allStops, headerSearch);
     const savedStops = stopMatches.filter((s) => isSavedStop(s.id));
     const notSavedStops = stopMatches.filter((s) => !isSavedStop(s.id));
-    const routeResults = routeMatches.map((route) => ({ kind: 'route' as const, route }));
+    const savedRoutes = routeMatches.filter((r) => isSavedRoute(r.id));
+    const notSavedRoutes = routeMatches.filter((r) => !isSavedRoute(r.id));
+    const routeResults = [...savedRoutes, ...notSavedRoutes].map((route) => ({ kind: 'route' as const, route }));
     const stopResults = [...savedStops, ...notSavedStops].map((stop) => ({ kind: 'stop' as const, stop }));
     return [...routeResults, ...stopResults];
-  }, [allStops, allRoutes, headerSearch, isSavedStop]);
+  }, [allStops, allRoutes, headerSearch, isSavedStop, isSavedRoute]);
 
   const openStop = (stop: BusStop) => {
     setHeaderSearch('');
@@ -174,6 +177,13 @@ export default function Header({ isMobile, mobileTab }: HeaderProps) {
             noResultsMessage={t('menu.noSearchResults')}
             renderItemPrefix={(stop) =>
               isSavedStop(stop.id) ? (
+                <Bookmark className="h-4 w-4 shrink-0 fill-current" aria-hidden />
+              ) : (
+                <span className="inline-block h-4 w-4 shrink-0" aria-hidden />
+              )
+            }
+            renderRoutePrefix={(route) =>
+              isSavedRoute(route.id) ? (
                 <Bookmark className="h-4 w-4 shrink-0 fill-current" aria-hidden />
               ) : (
                 <span className="inline-block h-4 w-4 shrink-0" aria-hidden />
@@ -280,6 +290,13 @@ export default function Header({ isMobile, mobileTab }: HeaderProps) {
                 noResultsMessage={t('menu.noSearchResults')}
                 renderItemPrefix={(stop) =>
                   isSavedStop(stop.id) ? (
+                    <Bookmark className="h-4 w-4 shrink-0 fill-current" aria-hidden />
+                  ) : (
+                    <span className="inline-block h-4 w-4 shrink-0" aria-hidden />
+                  )
+                }
+                renderRoutePrefix={(route) =>
+                  isSavedRoute(route.id) ? (
                     <Bookmark className="h-4 w-4 shrink-0 fill-current" aria-hidden />
                   ) : (
                     <span className="inline-block h-4 w-4 shrink-0" aria-hidden />

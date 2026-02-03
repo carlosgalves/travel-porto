@@ -33,6 +33,7 @@ export interface SearchbarProps {
   stopPropagation?: boolean;
   /** Optional content at the start of each row (e.g. saved bookmark icon). */
   renderItemPrefix?: (stop: BusStop) => ReactNode;
+  renderRoutePrefix?: (route: Route) => ReactNode;
   /** Optional extra content per row (e.g. remove button). */
   renderItemExtra?: (stop: BusStop) => ReactNode;
   /** Class name for the wrapper (e.g. "relative max-w-xs flex-1"). */
@@ -58,6 +59,7 @@ export default function Searchbar({
   inlineResults = false,
   stopPropagation = false,
   renderItemPrefix,
+  renderRoutePrefix,
   renderItemExtra,
   className = '',
   searchBarClassName = '',
@@ -162,6 +164,7 @@ export default function Searchbar({
                         }
                       }}
                     >
+                      {renderRoutePrefix?.(result.route)}
                       <span
                         className="inline-flex shrink-0 items-center justify-center rounded px-2 py-0.5 text-sm font-semibold"
                         style={{
@@ -219,6 +222,7 @@ export default function Searchbar({
                       }
                     }}
                   >
+                    {renderRoutePrefix?.(result.route)}
                     <span
                       className="inline-flex shrink-0 items-center justify-center rounded px-2 py-0.5 text-sm font-semibold"
                       style={{
