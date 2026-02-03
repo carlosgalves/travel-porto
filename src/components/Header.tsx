@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Locate, LocateFixed, LocateOff, Bookmark, Filter } from 'lucide-react';
+import { Locate, LocateFixed, LocateOff, Bookmark, Filter, Search } from 'lucide-react';
 import { Button } from './ui/button';
 import Searchbar from './Searchbar';
 import { ScrollArea } from './ui/scroll-area';
@@ -47,7 +47,16 @@ export default function Header({ isMobile, mobileTab }: HeaderProps) {
   const [allStops, setAllStops] = useState<BusStop[]>([]);
   const [allRoutes, setAllRoutes] = useState<Route[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [filterRouteSearch, setFilterRouteSearch] = useState('');
   const filterPanelRef = useRef<HTMLDivElement>(null);
+
+  const filteredRoutesForFilter = useMemo(
+    () =>
+      filterRouteSearch.trim()
+        ? filterRoutesByQuery(allRoutes, filterRouteSearch)
+        : allRoutes,
+    [allRoutes, filterRouteSearch]
+  );
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -55,6 +64,7 @@ export default function Header({ isMobile, mobileTab }: HeaderProps) {
         if (enabledRouteIds !== null && enabledRouteIds.size === 0) {
           setEnabledRouteIds(null);
         }
+        setFilterRouteSearch('');
         setFilterOpen(false);
       }
     };
@@ -89,6 +99,7 @@ export default function Header({ isMobile, mobileTab }: HeaderProps) {
       if (enabledRouteIds !== null && enabledRouteIds.size === 0) {
         setEnabledRouteIds(null);
       }
+      setFilterRouteSearch('');
       setFilterOpen(false);
     } else {
       loadStopToRouteIds();
@@ -226,6 +237,21 @@ export default function Header({ isMobile, mobileTab }: HeaderProps) {
                     </Button>
                   )}
                 </div>
+                {!stopToRouteIdsLoading && (
+                  <div className="shrink-0 border-b border-border px-2 py-2">
+                    <div className="relative flex items-center">
+                      <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 shrink-0 text-muted-foreground pointer-events-none" aria-hidden />
+                      <input
+                        type="text"
+                        inputMode="search"
+                        value={filterRouteSearch}
+                        onChange={(e) => setFilterRouteSearch(e.target.value)}
+                        placeholder={t('menu.filterSearchRoutes')}
+                        className="w-full rounded-md border border-input bg-background py-1.5 pl-8 pr-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                      />
+                    </div>
+                  </div>
+                )}
                 {stopToRouteIdsLoading ? (
                   <div className="shrink-0 px-3 py-4 text-center text-sm text-muted-foreground">
                     {t('routes.loading')}
@@ -233,7 +259,7 @@ export default function Header({ isMobile, mobileTab }: HeaderProps) {
                 ) : (
                   <ScrollArea className="shrink min-h-0" style={{ height: '16rem' }}>
                     <div className="p-1">
-                      {allRoutes.map((route) => {
+                      {filteredRoutesForFilter.map((route) => {
                         const enabled = isRouteEnabled(route.id);
                         return (
                           <button
@@ -339,6 +365,21 @@ export default function Header({ isMobile, mobileTab }: HeaderProps) {
                         </Button>
                       )}
                     </div>
+                    {!stopToRouteIdsLoading && (
+                      <div className="shrink-0 border-b border-border px-2 py-2">
+                        <div className="relative flex items-center">
+                          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 shrink-0 text-muted-foreground pointer-events-none" aria-hidden />
+                          <input
+                            type="text"
+                            inputMode="search"
+                            value={filterRouteSearch}
+                            onChange={(e) => setFilterRouteSearch(e.target.value)}
+                            placeholder={t('menu.filterSearchRoutes')}
+                            className="w-full rounded-md border border-input bg-background py-1.5 pl-8 pr-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                          />
+                        </div>
+                      </div>
+                    )}
                     {stopToRouteIdsLoading ? (
                       <div className="shrink-0 px-3 py-4 text-center text-sm text-muted-foreground">
                         {t('routes.loading')}
@@ -346,7 +387,7 @@ export default function Header({ isMobile, mobileTab }: HeaderProps) {
                     ) : (
                       <ScrollArea className="shrink min-h-0" style={{ height: '16rem' }}>
                         <div className="p-1">
-                          {allRoutes.map((route) => {
+                          {filteredRoutesForFilter.map((route) => {
                             const enabled = isRouteEnabled(route.id);
                             return (
                               <button

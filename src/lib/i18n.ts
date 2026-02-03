@@ -27,6 +27,8 @@ type TranslationKey =
   | 'menu.savedStops'
   | 'menu.searchSavedStops'
   | 'menu.filterByRoute'
+  | 'menu.filterByRouteDescription'
+  | 'menu.filterSearchRoutes'
   | 'menu.filterEnableAll'
   | 'menu.filterDisableAll'
   | 'menu.clearSearch'

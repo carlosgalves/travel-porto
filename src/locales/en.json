@@ -48,6 +48,7 @@
     "savedStops": "Saved stops",
     "searchSavedStops": "Search stops...",
     "filterByRoute": "Filter by route",
+    "filterSearchRoutes": "Search lines...",
     "filterEnableAll": "Enable all",
     "filterDisableAll": "Disable all",
     "clearSearch": "Clear search",
