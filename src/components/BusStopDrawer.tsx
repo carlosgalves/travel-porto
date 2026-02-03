@@ -157,16 +157,23 @@ export default function BusStopDrawer({
     return <Locate className="h-5 w-5" />;
   };
 
-  const formatTime = (time: string) =>
-    time.length >= 5 ? time.slice(0, 5) : time;
+  /** Format ISO 8601 arrival time for display: time only (HH:MM), no date. */
+  function formatTimeFromISO(iso: string): string {
+    if (!iso || typeof iso !== 'string') return '--:--';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso.slice(11, 16) || '--:--';
+    return d.toLocaleTimeString(undefined, {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+  }
 
-  const toHHMM = (t: string) => (t ?? '').trim().slice(0, 5) || '00:00';
-
-  /** True if trip arrival time is before current time (HH:MM comparison). */
-  function isArrivalOld(arrivalTime: string): boolean {
-    const now = new Date();
-    const nowHHMM = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-    return toHHMM(arrivalTime) < nowHHMM;
+  /** True if trip arrival is in the past (compare ISO date). */
+  function isArrivalOld(isoArrivalTime: string): boolean {
+    if (!isoArrivalTime || typeof isoArrivalTime !== 'string') return true;
+    const t = new Date(isoArrivalTime);
+    return Number.isNaN(t.getTime()) || t.getTime() < Date.now();
   }
 
   type DisplayArrival =
@@ -214,7 +221,8 @@ export default function BusStopDrawer({
   ];
 
   const byArrivalTime = [...displayItems].sort(
-    (a, b) => toHHMM(a.arrivalTime).localeCompare(toHHMM(b.arrivalTime))
+    (a, b) =>
+      new Date(a.arrivalTime).getTime() - new Date(b.arrivalTime).getTime()
   );
 
   const firstFutureIndex = byArrivalTime.findIndex(
@@ -410,7 +418,10 @@ export default function BusStopDrawer({
                             <div className="text-sm font-bold tabular-nums text-right shrink-0">
                               {item.raw.arrival_minutes < 1
                                 ? t('busStop.arrivalNow')
-                                : `${item.raw.arrival_minutes} min`}
+                                : `${item.raw.arrival_minutes} min`}{' '}
+                              <span className="font-normal text-muted-foreground">
+                                ({formatTimeFromISO(item.arrivalTime)})
+                              </span>
                             </div>
                           </div>
 
@@ -472,7 +483,7 @@ export default function BusStopDrawer({
                                     {item.headsign}
                                   </div>
                                   <div className="text-sm font-medium tabular-nums text-right shrink-0">
-                                    {formatTime(item.arrivalTime)}
+                                    {formatTimeFromISO(item.arrivalTime)}
                                   </div>
                                 </div>
 
@@ -487,7 +498,7 @@ export default function BusStopDrawer({
                                       {item.raw.trip.service_id} · direction_id=
                                       {item.raw.trip.direction_id} · stop.sequence=
                                       {item.raw.stop.sequence} · depart=
-                                      {formatTime(item.raw.departure_time)}
+                                      {formatTimeFromISO(item.raw.departure_time)}
                                     </div>
                                   </details>
                                 )}
