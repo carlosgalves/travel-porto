@@ -53,7 +53,7 @@ function App() {
         <MapProvider>
           <div className="flex h-screen w-screen flex-col">
             <Header isMobile={isMobile} mobileTab={mobileTab} />
-            <div className="flex flex-1 min-h-0 md:pb-0" style={isMobile ? { paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' } : undefined}>
+            <div className="flex flex-1 min-h-0">
               <main className="flex-1 overflow-hidden min-h-0">
                 {isMobile && mobileTab === 'map' && <Map className="h-full w-full" />}
                 {isMobile && mobileTab === 'saved' && (
