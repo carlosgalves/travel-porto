@@ -1,7 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type L from 'leaflet';
 import type { BusStop } from '../api/types';
+import { fetchRoutes, fetchRouteStopsAll } from '../api/endpoints/routes';
 
 const SAVED_STOPS_STORAGE_KEY = 'travel-porto-saved-stops';
 
@@ -26,6 +27,8 @@ function loadSavedStops(): BusStop[] {
   }
 }
 
+export type EnabledRouteIds = Set<string> | null;
+
 interface MapContextType {
   mapInstance: L.Map | null;
   userPosition: [number, number] | null;
@@ -41,6 +44,11 @@ interface MapContextType {
   isSavedStop: (stopId: string) => boolean;
   requestLocation: () => void;
   setRequestLocation: (fn: () => void) => void;
+  enabledRouteIds: EnabledRouteIds;
+  setEnabledRouteIds: (value: EnabledRouteIds | ((prev: EnabledRouteIds) => EnabledRouteIds)) => void;
+  stopToRouteIds: Map<string, Set<string>>;
+  loadStopToRouteIds: () => void;
+  stopToRouteIdsLoading: boolean;
 }
 
 const MapContext = createContext<MapContextType | undefined>(undefined);
@@ -53,6 +61,54 @@ export function MapProvider({ children }: { children: ReactNode }) {
   const [isCenteredOnUser, setIsCenteredOnUser] = useState<boolean>(false);
   const [savedStops, setSavedStops] = useState<BusStop[]>(loadSavedStops);
   const [requestLocation, setRequestLocation] = useState<() => void>(() => () => {});
+
+  const [enabledRouteIds, setEnabledRouteIdsState] = useState<EnabledRouteIds>(null);
+  const setEnabledRouteIds = useCallback((value: EnabledRouteIds | ((prev: EnabledRouteIds) => EnabledRouteIds)) => {
+    setEnabledRouteIdsState((prev) => {
+      const next = typeof value === 'function' ? value(prev) : value;
+      return next;
+    });
+  }, []);
+
+  const [stopToRouteIds, setStopToRouteIds] = useState<Map<string, Set<string>>>(() => new Map());
+  const [stopToRouteIdsLoading, setStopToRouteIdsLoading] = useState(false);
+  const stopToRouteIdsLoadedRef = useRef(false);
+
+  const loadStopToRouteIds = useCallback(() => {
+    if (stopToRouteIdsLoadedRef.current || stopToRouteIdsLoading) return;
+    stopToRouteIdsLoadedRef.current = true;
+    setStopToRouteIdsLoading(true);
+    fetchRoutes()
+      .then((routes) => {
+        const allStops = new Map<string, Set<string>>();
+        return Promise.all(
+          routes.map((route) =>
+            fetchRouteStopsAll(route.id)
+              .then((data) => {
+                (data.directions ?? []).forEach((dir) => {
+                  (dir.stops ?? []).forEach((s) => {
+                    const stopId = s.stop?.id;
+                    if (stopId) {
+                      if (!allStops.has(stopId)) allStops.set(stopId, new Set());
+                      allStops.get(stopId)!.add(route.id);
+                    }
+                  });
+                });
+              })
+              .catch(() => {})
+          )
+        ).then(() => allStops);
+      })
+      .then((map) => {
+        setStopToRouteIds(new Map(map));
+      })
+      .catch(() => {
+        stopToRouteIdsLoadedRef.current = false;
+      })
+      .finally(() => {
+        setStopToRouteIdsLoading(false);
+      });
+  }, [stopToRouteIdsLoading]);
 
   useEffect(() => {
     localStorage.setItem(SAVED_STOPS_STORAGE_KEY, JSON.stringify(savedStops));
@@ -83,6 +139,8 @@ export function MapProvider({ children }: { children: ReactNode }) {
         isCenteredOnUser, setIsCenteredOnUser,
         savedStops, addSavedStop, removeSavedStop, isSavedStop,
         requestLocation, setRequestLocation,
+        enabledRouteIds, setEnabledRouteIds,
+        stopToRouteIds, loadStopToRouteIds, stopToRouteIdsLoading,
       }}
     >
       {children}

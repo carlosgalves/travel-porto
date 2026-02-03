@@ -34,6 +34,27 @@ export async function fetchRoutes(): Promise<Route[]> {
   return routesPromise;
 }
 
+// Fetches all stops for a route
+export async function fetchRouteStopsAll(routeId: string): Promise<RouteStopsResponse['data']> {
+  const response = await fetch(`${API_BASE_URL}/stcp/routes/${encodeURIComponent(routeId)}/stops`,
+    {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        'X-API-Key': API_KEY,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch route stops: ${response.statusText}`);
+  }
+
+  const data: RouteStopsResponse = await response.json();
+  return data.data;
+}
+
+//Fetches stops for a route headsign
 export async function fetchRouteStops(
   routeId: string,
   directionId: number,

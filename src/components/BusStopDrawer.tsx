@@ -35,7 +35,10 @@ export default function BusStopDrawer({
 }: BusStopDrawerProps) {
   const { language } = useLanguage();
   const t = useTranslation(language);
-  const { addSavedStop, removeSavedStop, isSavedStop } = useMapContext();
+  const { addSavedStop, removeSavedStop, isSavedStop, enabledRouteIds } = useMapContext();
+
+  const isRouteGloballyEnabled = (routeId: string) =>
+    enabledRouteIds === null || enabledRouteIds.has(routeId);
   const isDebug = String(import.meta.env.VITE_DEBUG).toLowerCase() === 'true';
   const [isCenteredOnStop, setIsCenteredOnStop] = useState(false);
   const [arrivals, setArrivals] = useState<BusScheduledArrivals['data']>([]);
@@ -107,7 +110,11 @@ export default function BusStopDrawer({
             ? realtimeData.map((r) => r.trip.route_id)
             : []),
         ]);
-        setEnabledRoutes(allRouteIds);
+        const active =
+          enabledRouteIds === null
+            ? allRouteIds
+            : new Set([...allRouteIds].filter((id) => enabledRouteIds.has(id)));
+        setEnabledRoutes(active.size > 0 ? active : allRouteIds);
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -383,12 +390,15 @@ export default function BusStopDrawer({
               <div className="space-y-3 pb-4">
                     {visibleArrivals
                       .filter((item) => item.type === 'realtime')
-                      .map((item) => (
+                      .map((item) => {
+                        const showFaded = !isRouteGloballyEnabled(item.route_id);
+                        return (
                         <div
                           key={item.key}
                           className={[
                             'rounded-md border border-l-4 px-3 py-2',
                             'border-t border-r border-b border-t-blue-500 border-r-blue-500 border-b-blue-500 bg-blue-50/80 dark:border-t-blue-400 dark:border-r-blue-400 dark:border-b-blue-400 dark:bg-blue-950/20',
+                            showFaded ? 'opacity-50' : '',
                           ].join(' ')}
                           style={{
                             borderLeftColor: `var(--route-${item.route_id}, var(--border))`,
@@ -439,7 +449,7 @@ export default function BusStopDrawer({
                             </details>
                           )}
                         </div>
-                      ))}
+                      ); })}
 
                     {visibleArrivals.filter((item) => item.type === 'scheduled')
                       .length > 0 && (
@@ -454,10 +464,12 @@ export default function BusStopDrawer({
                         <div className="space-y-2">
                           {visibleArrivals
                             .filter((item) => item.type === 'scheduled')
-                            .map((item) => (
+                            .map((item) => {
+                              const showFaded = !isRouteGloballyEnabled(item.route_id);
+                              return (
                               <div
                                 key={item.key}
-                                className="rounded-md border border-l-4 px-3 py-2"
+                                className={`rounded-md border border-l-4 px-3 py-2 ${showFaded ? 'opacity-50' : ''}`}
                                 style={{
                                   borderLeftColor: `var(--route-${item.route_id}, var(--border))`,
                                 }}
@@ -503,7 +515,7 @@ export default function BusStopDrawer({
                                   </details>
                                 )}
                               </div>
-                            ))}
+                            ); })}
                         </div>
                       </>
                     )}

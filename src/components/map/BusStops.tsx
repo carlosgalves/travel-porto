@@ -59,21 +59,47 @@ const BUS_STOP_ICON_SELECTED = L.divIcon({
   popupAnchor: [0, -10]
 });
 
+// Used when the stop has no enabled routes due to route filter
+const BUS_STOP_ICON_DISABLED = L.divIcon({
+  className: 'bus-stop-marker',
+  html: `
+    <div style="
+      width: var(--marker-bus-stop-size);
+      height: var(--marker-bus-stop-size);
+      border-radius: 50%;
+      background: var(--color-bus-stop-unselected);
+      border: var(--marker-bus-stop-border) solid var(--color-white);
+      box-shadow: var(--marker-shadow);
+      opacity: 0.45;
+    "></div>
+  `,
+  iconSize: [20, 20],
+  iconAnchor: [10, 10],
+  popupAnchor: [0, -10]
+});
+
 const CLUSTER_SIZE_PX = { small: 32, medium: 38, large: 44 } as const;
 
 function createClusterIcon(
   cluster: { getChildCount: () => number; getAllChildMarkers: () => L.Marker[] },
-  savedStopIds: Set<string>
+  savedStopIds: Set<string>,
+  disabledStopIds: Set<string>
 ) {
   const count = cluster.getChildCount();
   const markers = cluster.getAllChildMarkers();
   const hasSavedStop = markers.some(
     (m) => (m.options as L.MarkerOptions & { stopId?: string }).stopId && savedStopIds.has((m.options as L.MarkerOptions & { stopId?: string }).stopId!)
   );
+  const allDisabled = disabledStopIds.size > 0 && markers.every(
+    (m) => (m.options as L.MarkerOptions & { stopId?: string }).stopId && disabledStopIds.has((m.options as L.MarkerOptions & { stopId?: string }).stopId!)
+  );
   const size = count < 10 ? 'small' : count < 30 ? 'medium' : 'large';
   const px = CLUSTER_SIZE_PX[size];
   const outlineStyle = hasSavedStop
     ? 'outline: 2px solid var(--color-bus-stop-saved); outline-offset: 2px;'
+    : '';
+  const disabledStyle = allDisabled
+    ? 'opacity: 0.45; background-color: var(--muted, #9ca3af); border-color: var(--muted, #9ca3af);'
     : '';
   return L.divIcon({
     html: `<div class="custom-cluster-icon" style="
@@ -90,13 +116,15 @@ function createClusterIcon(
       font-size: ${size === 'small' ? '12px' : size === 'medium' ? '14px' : '16px'};
       box-shadow: 0 2px 4px rgba(0,0,0,0.2);
       ${outlineStyle}
+      ${disabledStyle}
     ">${count}</div>`,
     className: 'cluster-icon-wrapper',
     iconSize: L.point(px, px),
   });
 }
 
-function getBusStopIcon(isSelected: boolean, isSaved: boolean) {
+function getBusStopIcon(isSelected: boolean, isSaved: boolean, isDisabled: boolean) {
+  if (isDisabled) return BUS_STOP_ICON_DISABLED;
   if (isSelected) return BUS_STOP_ICON_SELECTED;
   if (isSaved) return BUS_STOP_ICON_SAVED;
   return BUS_STOP_ICON_UNSELECTED;
@@ -141,14 +169,15 @@ interface BusStopMarkerProps {
   position: [number, number];
   isSelected: boolean;
   isSaved: boolean;
+  isDisabled: boolean;
   onStopClick: (stop: BusStop) => void;
 }
 
-const BusStopMarker = memo(function BusStopMarker({ stop, position, isSelected, isSaved, onStopClick }: BusStopMarkerProps) {
+const BusStopMarker = memo(function BusStopMarker({ stop, position, isSelected, isSaved, isDisabled, onStopClick }: BusStopMarkerProps) {
   return (
     <Marker
       position={position}
-      icon={getBusStopIcon(isSelected, isSaved)}
+      icon={getBusStopIcon(isSelected, isSaved, isDisabled)}
       eventHandlers={{
         click: () => onStopClick(stop),
       }}
@@ -164,8 +193,29 @@ interface BusStopsProps {
 }
 
 export default function BusStops({ onStopClick, selectedStopId, urlStopId }: BusStopsProps) {
-  const { savedStops } = useMapContext();
+  const { savedStops, enabledRouteIds, stopToRouteIds } = useMapContext();
   const savedStopIds = useMemo(() => new Set(savedStops.map((s) => s.id)), [savedStops]);
+
+  const disabledStopIds = useMemo(() => {
+    if (enabledRouteIds === null) return new Set<string>();
+    const disabled = new Set<string>();
+    stopToRouteIds.forEach((routeIds, stopId) => {
+      const hasEnabled = [...routeIds].some((r) => enabledRouteIds.has(r));
+      if (!hasEnabled) disabled.add(stopId);
+    });
+    return disabled;
+  }, [enabledRouteIds, stopToRouteIds]);
+
+  const stopHasEnabledRoute = useCallback(
+    (stopId: string) => {
+      if (enabledRouteIds === null) return true;
+      const routeIds = stopToRouteIds.get(stopId);
+      if (!routeIds) return true;
+      return [...routeIds].some((r) => enabledRouteIds.has(r));
+    },
+    [enabledRouteIds, stopToRouteIds]
+  );
+
   const [stops, setStops] = useState<BusStop[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -176,8 +226,8 @@ export default function BusStops({ onStopClick, selectedStopId, urlStopId }: Bus
 
   const iconCreateFunction = useCallback(
     (cluster: { getChildCount: () => number; getAllChildMarkers: () => L.Marker[] }) =>
-      createClusterIcon(cluster, savedStopIds),
-    [savedStopIds]
+      createClusterIcon(cluster, savedStopIds, disabledStopIds),
+    [savedStopIds, disabledStopIds]
   );
 
   useEffect(() => {
@@ -185,7 +235,7 @@ export default function BusStops({ onStopClick, selectedStopId, urlStopId }: Bus
     if (!group?.refreshClusters) return;
     group.options.iconCreateFunction = iconCreateFunction;
     group.refreshClusters();
-  }, [savedStopIds, iconCreateFunction]);
+  }, [savedStopIds, disabledStopIds, iconCreateFunction]);
 
   useEffect(() => {
     fetchBusStops()
@@ -232,6 +282,7 @@ export default function BusStops({ onStopClick, selectedStopId, urlStopId }: Bus
           position={stopPositions.get(stop.id) ?? [stop.coordinates.latitude, stop.coordinates.longitude]}
           isSelected={selectedStopId === stop.id}
           isSaved={savedStopIds.has(stop.id)}
+          isDisabled={!stopHasEnabledRoute(stop.id)}
           onStopClick={onStopClick}
         />
       ))}
