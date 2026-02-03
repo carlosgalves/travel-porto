@@ -102,17 +102,52 @@ function getBusStopIcon(isSelected: boolean, isSaved: boolean) {
   return BUS_STOP_ICON_UNSELECTED;
 }
 
+
+/** Offset to spread overlapping stops so that they are clickable */
+
+const OVERLAP_OFFSET_DEG = 0.00005;
+
+
+function getStopPositions(stops: BusStop[]): Map<string, [number, number]> {
+  const key = (s: BusStop) =>
+    `${s.coordinates.latitude.toFixed(6)},${s.coordinates.longitude.toFixed(6)}`;
+  const byPos = new Map<string, BusStop[]>();
+  for (const stop of stops) {
+    const k = key(stop);
+    if (!byPos.has(k)) byPos.set(k, []);
+    byPos.get(k)!.push(stop);
+  }
+  const positions = new Map<string, [number, number]>();
+  for (const [, group] of byPos) {
+    if (group.length === 1) {
+      const s = group[0];
+      positions.set(s.id, [s.coordinates.latitude, s.coordinates.longitude]);
+      continue;
+    }
+    const baseLat = group[0].coordinates.latitude;
+    const baseLng = group[0].coordinates.longitude;
+    group.forEach((s, i) => {
+      const angle = (2 * Math.PI * i) / group.length;
+      const lat = baseLat + OVERLAP_OFFSET_DEG * Math.cos(angle);
+      const lng = baseLng + OVERLAP_OFFSET_DEG * Math.sin(angle);
+      positions.set(s.id, [lat, lng]);
+    });
+  }
+  return positions;
+}
+
 interface BusStopMarkerProps {
   stop: BusStop;
+  position: [number, number];
   isSelected: boolean;
   isSaved: boolean;
   onStopClick: (stop: BusStop) => void;
 }
 
-const BusStopMarker = memo(function BusStopMarker({ stop, isSelected, isSaved, onStopClick }: BusStopMarkerProps) {
+const BusStopMarker = memo(function BusStopMarker({ stop, position, isSelected, isSaved, onStopClick }: BusStopMarkerProps) {
   return (
     <Marker
-      position={[stop.coordinates.latitude, stop.coordinates.longitude]}
+      position={position}
       icon={getBusStopIcon(isSelected, isSaved)}
       eventHandlers={{
         click: () => onStopClick(stop),
@@ -171,6 +206,8 @@ export default function BusStops({ onStopClick, selectedStopId, urlStopId }: Bus
     if (stop) onStopClick(stop);
   }, [urlStopId, stops, selectedStopId, onStopClick]);
 
+  const stopPositions = useMemo(() => getStopPositions(stops), [stops]);
+
   if (loading || error) {
     return null;
   }
@@ -192,6 +229,7 @@ export default function BusStops({ onStopClick, selectedStopId, urlStopId }: Bus
         <BusStopMarker
           key={stop.id}
           stop={stop}
+          position={stopPositions.get(stop.id) ?? [stop.coordinates.latitude, stop.coordinates.longitude]}
           isSelected={selectedStopId === stop.id}
           isSaved={savedStopIds.has(stop.id)}
           onStopClick={onStopClick}
