@@ -2,16 +2,27 @@ import type { ReactNode } from 'react';
 import { Search, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
-import type { BusStop } from '../api/types';
+import type { BusStop, Route } from '../api/types';
 
 const ROW_HEIGHT_REM = 2.5;
+
+function toHex(color: string): string {
+  if (!color) return '#000000';
+  const s = color.trim();
+  return s.startsWith('#') ? s : `#${s}`;
+}
+
+export type SearchbarResult =
+  | { kind: 'stop'; stop: BusStop }
+  | { kind: 'route'; route: Route };
 
 export interface SearchbarProps {
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
-  results: BusStop[];
+  results: SearchbarResult[];
   onSelectStop: (stop: BusStop) => void;
+  onSelectRoute?: (route: Route) => void;
   /** Max number of results visible without scrolling; when there are more, results are shown in a scrollable list. */
   maxVisibleResults: number;
   noResultsMessage: string;
@@ -30,12 +41,17 @@ export interface SearchbarProps {
   searchBarClassName?: string;
 }
 
+function isStopResult(r: SearchbarResult): r is { kind: 'stop'; stop: BusStop } {
+  return r.kind === 'stop';
+}
+
 export default function Searchbar({
   value,
   onChange,
   placeholder,
   results,
   onSelectStop,
+  onSelectRoute,
   maxVisibleResults,
   noResultsMessage,
   showResultsWhenEmpty = false,
@@ -49,6 +65,14 @@ export default function Searchbar({
   const showDropdown = showResultsWhenEmpty || value.trim() !== '';
   const useScroll = results.length > maxVisibleResults;
   const scrollHeightRem = maxVisibleResults * ROW_HEIGHT_REM;
+
+  const handleSelect = (result: SearchbarResult) => {
+    if (result.kind === 'route') {
+      onSelectRoute?.(result.route);
+    } else {
+      onSelectStop(result.stop);
+    }
+  };
 
   return (
     <div className={inlineResults ? className.trim() : `relative ${className}`.trim()}>
@@ -102,54 +126,116 @@ export default function Searchbar({
               style={{ height: `min(${scrollHeightRem}rem, 50vh)` }}
             >
               <div className="p-1">
-                {results.map((stop) => (
-                  <div
-                    key={stop.id}
-                    className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground"
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => onSelectStop(stop)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        onSelectStop(stop);
-                      }
-                    }}
-                  >
-                    {renderItemPrefix?.(stop)}
-                    <span className="min-w-0 flex-1 break-words">{stop.name}</span>
-                    <span className="shrink-0 text-muted-foreground text-xs">
-                      {stop.id}
-                    </span>
-                    {renderItemExtra?.(stop)}
-                  </div>
-                ))}
+                {results.map((result) =>
+                  isStopResult(result) ? (
+                    <div
+                      key={result.stop.id}
+                      className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handleSelect(result)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleSelect(result);
+                        }
+                      }}
+                    >
+                      {renderItemPrefix?.(result.stop)}
+                      <span className="min-w-0 flex-1 break-words">{result.stop.name}</span>
+                      <span className="shrink-0 text-muted-foreground text-xs">
+                        {result.stop.id}
+                      </span>
+                      {renderItemExtra?.(result.stop)}
+                    </div>
+                  ) : (
+                    <div
+                      key={`route-${result.route.id}`}
+                      className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handleSelect(result)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleSelect(result);
+                        }
+                      }}
+                    >
+                      <span
+                        className="inline-flex shrink-0 items-center justify-center rounded px-2 py-0.5 text-sm font-semibold"
+                        style={{
+                          backgroundColor: toHex(result.route.route_color),
+                          color: toHex(result.route.route_text_color),
+                        }}
+                      >
+                        {result.route.short_name}
+                      </span>
+                      {result.route.long_name ? (
+                        <span className="min-w-0 flex-1 break-words">
+                          {result.route.long_name}
+                        </span>
+                      ) : null}
+                    </div>
+                  )
+                )}
               </div>
             </ScrollArea>
           ) : (
             <div className="p-1">
-              {results.map((stop) => (
-                <div
-                  key={stop.id}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => onSelectStop(stop)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      onSelectStop(stop);
-                    }
-                  }}
-                >
-                  {renderItemPrefix?.(stop)}
-                  <span className="min-w-0 flex-1 break-words">{stop.name}</span>
-                  <span className="shrink-0 text-muted-foreground text-xs">
-                    {stop.id}
-                  </span>
-                  {renderItemExtra?.(stop)}
-                </div>
-              ))}
+              {results.map((result) =>
+                isStopResult(result) ? (
+                  <div
+                    key={result.stop.id}
+                    className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleSelect(result)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleSelect(result);
+                      }
+                    }}
+                  >
+                    {renderItemPrefix?.(result.stop)}
+                    <span className="min-w-0 flex-1 break-words">{result.stop.name}</span>
+                    <span className="shrink-0 text-muted-foreground text-xs">
+                      {result.stop.id}
+                    </span>
+                    {renderItemExtra?.(result.stop)}
+                  </div>
+                ) : (
+                  <div
+                    key={`route-${result.route.id}`}
+                    className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleSelect(result)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleSelect(result);
+                      }
+                    }}
+                  >
+                    <span
+                      className="inline-flex shrink-0 items-center justify-center rounded px-2 py-0.5 text-sm font-semibold"
+                      style={{
+                        backgroundColor: toHex(result.route.route_color),
+                        color: toHex(result.route.route_text_color),
+                      }}
+                    >
+                      {result.route.short_name}
+                    </span>
+                    {result.route.long_name ? (
+                      <span className="min-w-0 flex-1 break-words">
+                        {result.route.long_name}
+                      </span>
+                    ) : null}
+                  </div>
+                )
+              )}
             </div>
           )}
         </div>

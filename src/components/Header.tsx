@@ -6,10 +6,12 @@ import { useMapContext } from '../contexts/MapContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTranslation } from '../lib/i18n';
 import { centerMap } from '../lib/map';
-import { filterStopsByQuery } from '../lib/search';
+import { filterStopsByQuery, filterRoutesByQuery } from '../lib/search';
 import type { BusStop } from '../api/types';
 import { fetchBusStops } from '../api/endpoints/stops';
+import { fetchRoutes } from '../api/endpoints/routes';
 import type { MobileTab } from './BottomNav';
+import { tabToPathname } from '../lib/routes';
 
 interface HeaderProps {
   isMobile?: boolean;
@@ -22,6 +24,7 @@ export default function Header({ isMobile, mobileTab }: HeaderProps) {
   const { mapInstance, userPosition, hasLocationPermission, isCenteredOnUser, setIsCenteredOnUser, isSavedStop, requestLocation } = useMapContext();
   const [headerSearch, setHeaderSearch] = useState('');
   const [allStops, setAllStops] = useState<BusStop[]>([]);
+  const [allRoutes, setAllRoutes] = useState<Awaited<ReturnType<typeof fetchRoutes>>>([]);
 
   useEffect(() => {
     fetchBusStops()
@@ -29,18 +32,35 @@ export default function Header({ isMobile, mobileTab }: HeaderProps) {
       .catch((err) => console.error('Failed to load stops for search:', err));
   }, []);
 
+  useEffect(() => {
+    fetchRoutes()
+      .then(setAllRoutes)
+      .catch((err) => console.error('Failed to load routes for search:', err));
+  }, []);
+
   const headerSearchResults = useMemo(() => {
-    const matches = filterStopsByQuery(allStops, headerSearch);
-    const saved = matches.filter((s) => isSavedStop(s.id));
-    const notSaved = matches.filter((s) => !isSavedStop(s.id));
-    return [...saved, ...notSaved];
-  }, [allStops, headerSearch, isSavedStop]);
+    const routeMatches = filterRoutesByQuery(allRoutes, headerSearch);
+    const stopMatches = filterStopsByQuery(allStops, headerSearch);
+    const savedStops = stopMatches.filter((s) => isSavedStop(s.id));
+    const notSavedStops = stopMatches.filter((s) => !isSavedStop(s.id));
+    const routeResults = routeMatches.map((route) => ({ kind: 'route' as const, route }));
+    const stopResults = [...savedStops, ...notSavedStops].map((stop) => ({ kind: 'stop' as const, stop }));
+    return [...routeResults, ...stopResults];
+  }, [allStops, allRoutes, headerSearch, isSavedStop]);
 
   const openStop = (stop: BusStop) => {
     setHeaderSearch('');
     const url = new URL(window.location.href);
     url.searchParams.set('stop', stop.id);
     window.history.pushState({}, '', url.pathname + url.search);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
+
+  const openRoute = (route: Awaited<ReturnType<typeof fetchRoutes>>[number]) => {
+    setHeaderSearch('');
+    const path = tabToPathname('routes');
+    const url = `${path}?route=${encodeURIComponent(route.id)}`;
+    window.history.pushState({}, '', url);
     window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
@@ -80,6 +100,7 @@ export default function Header({ isMobile, mobileTab }: HeaderProps) {
             placeholder={t('menu.searchSavedStops')}
             results={headerSearchResults}
             onSelectStop={openStop}
+            onSelectRoute={openRoute}
             maxVisibleResults={8}
             noResultsMessage={t('menu.noSearchResults')}
             renderItemPrefix={(stop) =>
@@ -104,6 +125,7 @@ export default function Header({ isMobile, mobileTab }: HeaderProps) {
                 placeholder={t('menu.searchSavedStops')}
                 results={headerSearchResults}
                 onSelectStop={openStop}
+                onSelectRoute={openRoute}
                 maxVisibleResults={8}
                 noResultsMessage={t('menu.noSearchResults')}
                 renderItemPrefix={(stop) =>

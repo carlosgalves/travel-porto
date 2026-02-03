@@ -134,6 +134,16 @@ export function RoutesView({ onSelectStop }: RoutesViewProps = {}) {
     });
   };
 
+  // Open route from URL
+  useEffect(() => {
+    if (routesLoading || routes.length === 0 || view.step !== 'list') return;
+    const params = new URLSearchParams(window.location.search);
+    const routeId = params.get('route');
+    if (!routeId) return;
+    const route = routes.find((r) => r.id === routeId);
+    if (route) handleSelectRoute(route);
+  }, [routesLoading, routes, view.step]);
+
   useEffect(() => {
     if (view.step !== 'route' || !view.stopsLoading) return;
     const { route, selectedDirection } = view;

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Map, Bookmark, Settings, Route, ChevronLeft, X, Moon, Sun, Check, Search } from 'lucide-react';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
@@ -7,9 +7,15 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTranslation } from '../lib/i18n';
 import { filterStopsByQuery } from '../lib/search';
+import { pathnameToTab } from '../lib/routes';
 import { cn } from '@/lib/utils';
 import type { BusStop } from '../api/types';
 import { RoutesView } from './mobile/RoutesView';
+
+function sidebarViewFromPathname(pathname: string): SidebarView {
+  const tab = pathnameToTab(pathname);
+  return tab === 'map' ? 'menu' : tab;
+}
 
 export type SidebarPanel = 'map' | 'saved' | 'settings' | 'routes';
 
@@ -30,12 +36,23 @@ const MENU_ITEMS: { id: SidebarPanel; icon: typeof Map }[] = [
 ];
 
 export function Sidebar() {
-  const [view, setView] = useState<SidebarView>('menu');
+  const [view, setView] = useState<SidebarView>(() =>
+    sidebarViewFromPathname(window.location.pathname)
+  );
   const { language, setLanguage } = useLanguage();
   const t = useTranslation(language);
   const { theme, setTheme } = useTheme();
   const { savedStops, removeSavedStop } = useMapContext();
   const [savedStopsSearch, setSavedStopsSearch] = useState('');
+
+  // Sync sidebar panel when URL changes
+  useEffect(() => {
+    const syncViewFromPath = () => {
+      setView(sidebarViewFromPathname(window.location.pathname));
+    };
+    window.addEventListener('popstate', syncViewFromPath);
+    return () => window.removeEventListener('popstate', syncViewFromPath);
+  }, []);
 
   const filteredSavedStops = useMemo(() => {
     const q = savedStopsSearch.trim();
