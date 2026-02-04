@@ -51,6 +51,7 @@ export default function BusStopDrawer({
   const [arrivalsError, setArrivalsError] = useState<string | null>(null);
   const [enabledRoutes, setEnabledRoutes] = useState<Set<string>>(new Set());
   const routeShapeLayersRef = useRef<L.Polyline[]>([]);
+  const shapePointMarkersRef = useRef<L.CircleMarker[]>([]);
 
   useEffect(() => {
     if (!mapInstance || !stop || !open) {
@@ -160,6 +161,10 @@ export default function BusStopDrawer({
       if (mapInstance && layer.getPane()) layer.remove();
     });
     routeShapeLayersRef.current = [];
+    shapePointMarkersRef.current.forEach((m) => {
+      if (mapInstance && m.getPane()) m.remove();
+    });
+    shapePointMarkersRef.current = [];
 
     if (!open || !mapInstance || !stop) return;
 
@@ -223,6 +228,19 @@ export default function BusStopDrawer({
               opacity: 0.9,
             }).addTo(mapInstance);
             routeShapeLayersRef.current.push(polyline);
+            if (isDebug) {
+              for (const [lat, lng] of latlngs) {
+                const marker = L.circleMarker([lat, lng], {
+                  radius: 4,
+                  fillColor: color,
+                  color: '#fff',
+                  weight: 1,
+                  opacity: 1,
+                  fillOpacity: 0.9,
+                }).addTo(mapInstance);
+                shapePointMarkersRef.current.push(marker);
+              }
+            }
           }
         } catch {
           // ignore per-route errors
@@ -238,6 +256,10 @@ export default function BusStopDrawer({
         if (layer.getPane()) layer.remove();
       });
       routeShapeLayersRef.current = [];
+      shapePointMarkersRef.current.forEach((m) => {
+        if (m.getPane()) m.remove();
+      });
+      shapePointMarkersRef.current = [];
     };
   }, [
     open,
@@ -246,6 +268,7 @@ export default function BusStopDrawer({
     arrivals,
     realtimeArrivals,
     enabledRoutes,
+    isDebug,
   ]);
 
   const handleReCenter = () => {
