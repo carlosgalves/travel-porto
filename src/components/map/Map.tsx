@@ -9,6 +9,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useTranslation } from '../../lib/i18n';
 import { useMapContext } from '../../contexts/MapContext';
 import BusStops from './BusStops';
+import RouteFilterLines from './RouteFilterLines';
 import type { BusStop } from '../../api/types';
 import BusStopDrawer from '../BusStopDrawer';
 import { centerMap } from '../../lib/map';
@@ -352,6 +353,7 @@ export default function Map({ className }: MapProps) {
           urlStopId={urlStopId}
           onStopClick={handleStopClick}
         />
+        <RouteFilterLines selectedStopId={drawerOpen && selectedStop ? selectedStop.id : null} />
         <MapCenter center={mapCenter} />
         <MapController onMapReady={(map) => setMapInstance(map)} />
         <MapCenterTracker userPosition={userPosition} onCenteredChange={setIsCenteredOnUser} />

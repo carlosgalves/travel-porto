@@ -1,11 +1,19 @@
-import { createContext, useCallback, useContext, useEffect, useState, useRef } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import type L from 'leaflet';
 import type { BusStop, Route } from '../api/types';
 import { fetchRoutes, fetchRouteStopsAll } from '../api/endpoints/routes';
+import { runWithConcurrency, withRetry } from '../lib/async';
 
 const SAVED_STOPS_STORAGE_KEY = 'travel-porto-saved-stops';
 const SAVED_ROUTES_STORAGE_KEY = 'travel-porto-saved-routes';
+
+let cachedStopToRouteIds: Map<string, Set<string>> | null = null;
+let cachedStopToRouteDirectionIds: Map<string, Set<string>> | null = null;
+
+export function routeDirectionKey(routeId: string, directionId: number): string {
+  return `${routeId}:${directionId}`;
+}
 
 function loadSavedStops(): BusStop[] {
   try {
@@ -71,6 +79,7 @@ interface MapContextType {
   enabledRouteIds: EnabledRouteIds;
   setEnabledRouteIds: (value: EnabledRouteIds | ((prev: EnabledRouteIds) => EnabledRouteIds)) => void;
   stopToRouteIds: Map<string, Set<string>>;
+  stopToRouteDirectionIds: Map<string, Set<string>>;
   loadStopToRouteIds: () => void;
   stopToRouteIdsLoading: boolean;
 }
@@ -95,45 +104,73 @@ export function MapProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const [stopToRouteIds, setStopToRouteIds] = useState<Map<string, Set<string>>>(() => new Map());
+  const [stopToRouteIds, setStopToRouteIds] = useState<Map<string, Set<string>>>(() => {
+    if (cachedStopToRouteIds) {
+      return new Map([...cachedStopToRouteIds].map(([k, v]) => [k, new Set(v)]));
+    }
+    return new Map();
+  });
+  const [stopToRouteDirectionIds, setStopToRouteDirectionIds] = useState<Map<string, Set<string>>>(() => {
+    if (cachedStopToRouteDirectionIds) {
+      return new Map([...cachedStopToRouteDirectionIds].map(([k, v]) => [k, new Set(v)]));
+    }
+    return new Map();
+  });
   const [stopToRouteIdsLoading, setStopToRouteIdsLoading] = useState(false);
-  const stopToRouteIdsLoadedRef = useRef(false);
 
-  const loadStopToRouteIds = useCallback(() => {
-    if (stopToRouteIdsLoadedRef.current || stopToRouteIdsLoading) return;
-    stopToRouteIdsLoadedRef.current = true;
+  // Fetch stops for each route on app load, limiting concurrent requests
+  const CONCURRENCY = 3;
+
+  useEffect(() => {
+    if (cachedStopToRouteIds !== null) return;
     setStopToRouteIdsLoading(true);
     fetchRoutes()
       .then((routes) => {
-        const allStops = new Map<string, Set<string>>();
-        return Promise.all(
-          routes.map((route) =>
-            fetchRouteStopsAll(route.id)
-              .then((data) => {
-                (data.directions ?? []).forEach((dir) => {
-                  (dir.stops ?? []).forEach((s) => {
-                    const stopId = s.stop?.id;
-                    if (stopId) {
-                      if (!allStops.has(stopId)) allStops.set(stopId, new Set());
-                      allStops.get(stopId)!.add(route.id);
-                    }
-                  });
-                });
-              })
-              .catch(() => {})
-          )
-        ).then(() => allStops);
+        const tasks = routes.map(
+          (route) => () => withRetry(() => fetchRouteStopsAll(route.id), Infinity) // retry until success
+        );
+        return runWithConcurrency(tasks, CONCURRENCY).then((results) => {
+          const allStops = new Map<string, Set<string>>();
+          const allStopsByDirection = new Map<string, Set<string>>();
+          results.forEach((data, i) => {
+            if (!data || i >= routes.length) return;
+            const route = routes[i];
+            (data.directions ?? []).forEach((dir) => {
+              const key = routeDirectionKey(route.id, dir.direction_id);
+              (dir.stops ?? []).forEach((s) => {
+                const stopId = s.stop?.id;
+                if (stopId) {
+                  if (!allStops.has(stopId)) allStops.set(stopId, new Set());
+                  allStops.get(stopId)!.add(route.id);
+                  if (!allStopsByDirection.has(stopId)) allStopsByDirection.set(stopId, new Set());
+                  allStopsByDirection.get(stopId)!.add(key);
+                }
+              });
+            });
+          });
+          return { byRoute: allStops, byDirection: allStopsByDirection };
+        });
       })
-      .then((map) => {
-        setStopToRouteIds(new Map(map));
+      .then(({ byRoute, byDirection }) => {
+        cachedStopToRouteIds = new Map([...byRoute].map(([k, v]) => [k, new Set(v)]));
+        setStopToRouteIds(new Map([...byRoute].map(([k, v]) => [k, new Set(v)])));
+        cachedStopToRouteDirectionIds = new Map([...byDirection].map(([k, v]) => [k, new Set(v)]));
+        setStopToRouteDirectionIds(new Map([...byDirection].map(([k, v]) => [k, new Set(v)])));
       })
-      .catch(() => {
-        stopToRouteIdsLoadedRef.current = false;
-      })
+      .catch(() => {})
       .finally(() => {
         setStopToRouteIdsLoading(false);
       });
-  }, [stopToRouteIdsLoading]);
+  }, []);
+
+  const loadStopToRouteIds = useCallback(() => {
+    if (cachedStopToRouteIds !== null) {
+      setStopToRouteIds(new Map([...cachedStopToRouteIds].map(([k, v]) => [k, new Set(v)])));
+    }
+    if (cachedStopToRouteDirectionIds !== null) {
+      setStopToRouteDirectionIds(new Map([...cachedStopToRouteDirectionIds].map(([k, v]) => [k, new Set(v)])));
+    }
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(SAVED_STOPS_STORAGE_KEY, JSON.stringify(savedStops));
@@ -186,7 +223,7 @@ export function MapProvider({ children }: { children: ReactNode }) {
         savedRoutes, addSavedRoute, removeSavedRoute, isSavedRoute,
         requestLocation, setRequestLocation,
         enabledRouteIds, setEnabledRouteIds,
-        stopToRouteIds, loadStopToRouteIds, stopToRouteIdsLoading,
+        stopToRouteIds, stopToRouteDirectionIds, loadStopToRouteIds, stopToRouteIdsLoading,
       }}
     >
       {children}

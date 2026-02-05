@@ -1,9 +1,10 @@
-import { memo, useCallback, useMemo, useEffect, useRef, useState } from 'react';
-import { Marker } from 'react-leaflet';
+import { memo, useCallback, useMemo, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { Marker, Tooltip } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-markercluster';
 import L from 'leaflet';
 import { fetchBusStops, type BusStop } from '../../api/types';
 import { useMapContext } from '../../contexts/MapContext';
+import { Badge } from '../ui/badge';
 
 
 const BUS_STOP_ICON_UNSELECTED = L.divIcon({
@@ -73,6 +74,15 @@ const BUS_STOP_ICON_DISABLED = L.divIcon({
       opacity: 0.45;
     "></div>
   `,
+  iconSize: [20, 20],
+  iconAnchor: [10, 10],
+  popupAnchor: [0, -10]
+});
+
+// Invisible icon used when showing marker+badges group (dot is drawn inside tooltip)
+const BUS_STOP_ICON_INVISIBLE = L.divIcon({
+  className: 'bus-stop-marker-invisible',
+  html: '<div style="width:20px;height:20px;pointer-events:none"></div>',
   iconSize: [20, 20],
   iconAnchor: [10, 10],
   popupAnchor: [0, -10]
@@ -170,19 +180,113 @@ interface BusStopMarkerProps {
   isSelected: boolean;
   isSaved: boolean;
   isDisabled: boolean;
+  enabledRouteIdsAtStop: string[];
+  showRouteBadges: boolean;
   onStopClick: (stop: BusStop) => void;
 }
 
-const BusStopMarker = memo(function BusStopMarker({ stop, position, isSelected, isSaved, isDisabled, onStopClick }: BusStopMarkerProps) {
+function getDotStyle(isSelected: boolean, isSaved: boolean, isDisabled: boolean): CSSProperties {
+  const base = {
+    width: 'var(--marker-bus-stop-size)',
+    height: 'var(--marker-bus-stop-size)',
+    borderRadius: '50%',
+    border: 'var(--marker-bus-stop-border) solid var(--color-white)',
+    boxShadow: 'var(--marker-shadow)',
+    flexShrink: 0,
+  } as CSSProperties;
+  if (isDisabled) {
+    return { ...base, background: 'var(--color-bus-stop-unselected)', opacity: 0.45 };
+  }
+  if (isSelected) {
+    return { ...base, background: 'var(--color-bus-stop-selected)' };
+  }
+  if (isSaved) {
+    return {
+      ...base,
+      background: 'var(--color-bus-stop-unselected)',
+      outline: '2px solid var(--color-bus-stop-saved)',
+      outlineOffset: '2px',
+    };
+  }
+  return { ...base, background: 'var(--color-bus-stop-unselected)' };
+}
+
+const BusStopMarker = memo(function BusStopMarker({
+  stop,
+  position,
+  isSelected,
+  isSaved,
+  isDisabled,
+  enabledRouteIdsAtStop,
+  showRouteBadges,
+  onStopClick,
+}: BusStopMarkerProps) {
+  const showBadges = showRouteBadges && enabledRouteIdsAtStop.length > 0;
+  const icon = showBadges
+    ? BUS_STOP_ICON_INVISIBLE
+    : getBusStopIcon(isSelected, isSaved, isDisabled);
+
   return (
     <Marker
       position={position}
-      icon={getBusStopIcon(isSelected, isSaved, isDisabled)}
+      icon={icon}
       eventHandlers={{
         click: () => onStopClick(stop),
       }}
       {...({ stopId: stop.id } as { stopId: string })}
-    />
+    >
+      {showBadges && (
+        <Tooltip
+          permanent
+          direction="right"
+          offset={[-10, 0]}
+          className="route-badge-tooltip"
+        >
+          <div
+            className="bus-stop-marker-badges-group"
+            role="button"
+            tabIndex={0}
+            onClick={(e) => {
+              e.stopPropagation();
+              onStopClick(stop);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                onStopClick(stop);
+              }
+            }}
+          >
+            <div
+              className="bus-stop-marker-dot"
+              style={getDotStyle(isSelected, isSaved, isDisabled)}
+              aria-hidden
+            />
+            <div className="flex items-center gap-1 pointer-events-none">
+              {enabledRouteIdsAtStop.map((routeId) => (
+                <Badge
+                  key={routeId}
+                  variant="secondary"
+                  className={
+                    routeId.endsWith('M')
+                      ? 'border border-transparent dark:border-white/80'
+                      : ''
+                  }
+                  style={{
+                    backgroundColor: `var(--route-${routeId}, var(--muted))`,
+                    color: `var(--route-text-${routeId}, var(--foreground))`,
+                    borderColor: 'transparent',
+                  }}
+                >
+                  {routeId}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </Tooltip>
+      )}
+    </Marker>
   );
 });
 
@@ -258,6 +362,19 @@ export default function BusStops({ onStopClick, selectedStopId, urlStopId }: Bus
 
   const stopPositions = useMemo(() => getStopPositions(stops), [stops]);
 
+  const showRouteBadges =
+    enabledRouteIds !== null && enabledRouteIds.size > 1;
+
+  const stopToEnabledRouteIds = useMemo(() => {
+    if (!showRouteBadges || !enabledRouteIds) return new Map<string, string[]>();
+    const map = new Map<string, string[]>();
+    stopToRouteIds.forEach((routeIds, stopId) => {
+      const enabled = [...routeIds].filter((r) => enabledRouteIds.has(r));
+      if (enabled.length > 0) map.set(stopId, enabled);
+    });
+    return map;
+  }, [showRouteBadges, enabledRouteIds, stopToRouteIds]);
+
   if (loading || error) {
     return null;
   }
@@ -283,6 +400,8 @@ export default function BusStops({ onStopClick, selectedStopId, urlStopId }: Bus
           isSelected={selectedStopId === stop.id}
           isSaved={savedStopIds.has(stop.id)}
           isDisabled={!stopHasEnabledRoute(stop.id)}
+          enabledRouteIdsAtStop={stopToEnabledRouteIds.get(stop.id) ?? []}
+          showRouteBadges={showRouteBadges}
           onStopClick={onStopClick}
         />
       ))}
