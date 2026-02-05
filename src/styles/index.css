@@ -73,6 +73,20 @@
   background-color: var(--foreground);
 }
 
+/* Route badge next to bus stop marker */
+.route-badge-tooltip.leaflet-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin-left: 0 !important;
+}
+
+.route-badge-tooltip.leaflet-tooltip-left::before,
+.route-badge-tooltip.leaflet-tooltip-right::before {
+  display: none !important;
+}
+
 .cluster-icon-wrapper {
   background: transparent !important;
   border: none !important;
