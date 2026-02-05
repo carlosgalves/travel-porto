@@ -11,6 +11,7 @@ import { Sidebar } from './components/Sidebar'
 import { SavedStopsView } from './components/mobile/SavedStopsView'
 import { RoutesView } from './components/mobile/RoutesView'
 import { SettingsView } from './components/mobile/SettingsView'
+import { InstallPrompt } from './components/InstallPrompt'
 import './App.css'
 
 function App() {
@@ -70,6 +71,7 @@ function App() {
             {isMobile && (
               <BottomNav activeTab={mobileTab} onTabChange={handleMobileTabChange} />
             )}
+            <InstallPrompt />
           </div>
         </MapProvider>
       </LanguageProvider>

@@ -51,7 +51,12 @@ type TranslationKey =
   | 'routes.noStops'
   | 'errors.locationError'
   | 'errors.geolocationNotSupported'
-  | 'errors.noInternetConnection';
+  | 'errors.noInternetConnection'
+  | 'install.title'
+  | 'install.body'
+  | 'install.bodyIos'
+  | 'install.installButton'
+  | 'install.later';
 
 const translations: Record<Language, typeof enTranslations> = {
   en: enTranslations,

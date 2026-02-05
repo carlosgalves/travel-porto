@@ -63,5 +63,12 @@
     "locationError": "Unable to retrieve your location.",
     "geolocationNotSupported": "Geolocation is not supported by your browser.",
     "noInternetConnection": "No internet connection."
+  },
+  "install": {
+    "title": "Install Travel Porto",
+    "body": "Install the app to access it quickly.",
+    "bodyIos": "To install: tap the Share button at the bottom of Safari, then tap \"Add to Home Screen\".",
+    "installButton": "Install app",
+    "later": "Not now"
   }
 }

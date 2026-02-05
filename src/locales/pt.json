@@ -63,5 +63,12 @@
     "locationError": "Não foi possível obter a sua localização.",
     "geolocationNotSupported": "A geolocalização não é suportada pelo seu browser.",
     "noInternetConnection": "Sem ligação à Internet."
+  },
+  "install": {
+    "title": "Instalar Travel Porto",
+    "body": "Instale a app para aceder-he rapidamente.",
+    "bodyIos": "Para instalar: toque no botão Partilhar na barra inferiordo Safari e depois em \"Adicionar ao Ecrã Inicial\".",
+    "installButton": "Instalar app",
+    "later": "Agora não"
   }
 }
