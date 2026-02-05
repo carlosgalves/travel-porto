@@ -71,7 +71,7 @@ export function InstallPrompt() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center p-4 pb-[env(safe-area-inset-bottom)] sm:items-center sm:p-6"
+      className="fixed inset-0 z-50 flex justify-center pt-[calc(3.5rem+env(safe-area-inset-top))] sm:pt-[calc(4rem+env(safe-area-inset-top))]"
       role="dialog"
       aria-labelledby="install-prompt-title"
       aria-modal="true"
@@ -81,7 +81,7 @@ export function InstallPrompt() {
         aria-hidden="true"
         onClick={handleDismiss}
       />
-      <div className="relative w-full max-w-sm rounded-xl border border-border bg-card p-4 shadow-lg">
+      <div className="relative mx-4 w-full max-w-sm rounded-xl border border-border bg-card p-4 shadow-lg">
         <button
           type="button"
           onClick={handleDismiss}
