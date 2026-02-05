@@ -58,6 +58,9 @@
   html, body {
     @apply h-full w-full m-0 p-0;
   }
+  html {
+    touch-action: manipulation;
+  }
   body {
     @apply bg-background text-foreground;
   }
