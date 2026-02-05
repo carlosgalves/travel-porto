@@ -210,6 +210,11 @@ export default function BusStopDrawer({
       if (cancelled || !mapInstance) return;
       const routeById = new Map(routes.map((r) => [r.id, r]));
 
+      const pairColors = routeDirectionPairs.map(({ route_id }) =>
+        toHex(routeById.get(route_id)?.route_color ?? '#000000')
+      );
+      const uniqueColors = [...new Set(pairColors)];
+      const offsetMeters = 2;
       const drawPromises = routeDirectionPairs.map(async ({ route_id, direction_id }) => {
         if (cancelled || !mapInstance) return;
         try {
@@ -218,12 +223,17 @@ export default function BusStopDrawer({
           const route = routeById.get(route_id);
           const color = toHex(route?.route_color ?? '#000000');
           const whiteOutline = theme === 'dark' && route_id.endsWith('M');
+          const offset =
+            uniqueColors.length > 1
+              ? (uniqueColors.indexOf(color) - (uniqueColors.length - 1) / 2) * offsetMeters
+              : undefined;
           for (const shape of shapes) {
             if (cancelled || !mapInstance) break;
             const result = drawRouteShape(mapInstance, shape, {
               color,
               debug: isDebug,
               whiteOutline,
+              offsetMeters: offset,
             });
             if (result) {
               if (result.outlinePolyline) routeShapeLayersRef.current.push(result.outlinePolyline);

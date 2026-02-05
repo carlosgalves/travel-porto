@@ -14,9 +14,11 @@ export interface DrawRouteShapeOptions {
   debug?: boolean;
   // draw white outline on dark mode for M lines
   whiteOutline?: boolean;
+  // offset meters to draw overlapping routes side by side
+  offsetMeters?: number;
 }
 
-const DEFAULT_OPTIONS: Required<Omit<DrawRouteShapeOptions, 'debug'>> = {
+const DEFAULT_OPTIONS: Required<Omit<DrawRouteShapeOptions, 'debug' | 'offsetMeters'>> = {
   color: '#000000',
   weight: 5,
   opacity: 0.9,
@@ -36,8 +38,17 @@ export function drawRouteShape(
   options: DrawRouteShapeOptions
 ): DrawRouteShapeResult | null {
   const opts = { ...DEFAULT_OPTIONS, ...options };
-  const latlngs = shapeToLatLngs(shape);
+  let latlngs = shapeToLatLngs(shape);
   if (latlngs.length < 2) return null;
+
+  const offsetM = opts.offsetMeters ?? 0;
+  if (Math.abs(offsetM) >= 1e-6) {
+    const lat0 = latlngs[0][0];
+    // Convert offset meters to degrees longitude (≈111 km/deg × cos(lat) at this latitude)
+    const mPerDegLng = 111_000 * Math.cos((lat0 * Math.PI) / 180);
+    const dLng = offsetM / mPerDegLng;
+    latlngs = latlngs.map(([lat, lng]) => [lat, lng + dLng]);
+  }
 
   let outlinePolyline: L.Polyline | undefined;
   if (opts.whiteOutline) {
