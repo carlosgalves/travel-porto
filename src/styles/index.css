@@ -79,12 +79,34 @@
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
-  margin-left: 0 !important;
+  margin: 0 !important;
 }
 
 .route-badge-tooltip.leaflet-tooltip-left::before,
-.route-badge-tooltip.leaflet-tooltip-right::before {
+.route-badge-tooltip.leaflet-tooltip-right::before,
+.route-badge-tooltip.leaflet-tooltip-top::before,
+.route-badge-tooltip.leaflet-tooltip-bottom::before {
   display: none !important;
+}
+
+.bus-stop-marker-badges-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px 4px 4px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 9999px; /* match badge rounded-full */
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+}
+
+.bus-stop-marker-dot {
+  flex-shrink: 0;
+}
+
+.leaflet-marker-icon.bus-stop-marker-invisible {
+  background: transparent !important;
+  border: none !important;
 }
 
 .cluster-icon-wrapper {

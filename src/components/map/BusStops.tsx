@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useMemo, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Marker, Tooltip } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-markercluster';
 import L from 'leaflet';
@@ -74,6 +74,15 @@ const BUS_STOP_ICON_DISABLED = L.divIcon({
       opacity: 0.45;
     "></div>
   `,
+  iconSize: [20, 20],
+  iconAnchor: [10, 10],
+  popupAnchor: [0, -10]
+});
+
+// Invisible icon used when showing marker+badges group (dot is drawn inside tooltip)
+const BUS_STOP_ICON_INVISIBLE = L.divIcon({
+  className: 'bus-stop-marker-invisible',
+  html: '<div style="width:20px;height:20px;pointer-events:none"></div>',
   iconSize: [20, 20],
   iconAnchor: [10, 10],
   popupAnchor: [0, -10]
@@ -176,6 +185,32 @@ interface BusStopMarkerProps {
   onStopClick: (stop: BusStop) => void;
 }
 
+function getDotStyle(isSelected: boolean, isSaved: boolean, isDisabled: boolean): CSSProperties {
+  const base = {
+    width: 'var(--marker-bus-stop-size)',
+    height: 'var(--marker-bus-stop-size)',
+    borderRadius: '50%',
+    border: 'var(--marker-bus-stop-border) solid var(--color-white)',
+    boxShadow: 'var(--marker-shadow)',
+    flexShrink: 0,
+  } as CSSProperties;
+  if (isDisabled) {
+    return { ...base, background: 'var(--color-bus-stop-unselected)', opacity: 0.45 };
+  }
+  if (isSelected) {
+    return { ...base, background: 'var(--color-bus-stop-selected)' };
+  }
+  if (isSaved) {
+    return {
+      ...base,
+      background: 'var(--color-bus-stop-unselected)',
+      outline: '2px solid var(--color-bus-stop-saved)',
+      outlineOffset: '2px',
+    };
+  }
+  return { ...base, background: 'var(--color-bus-stop-unselected)' };
+}
+
 const BusStopMarker = memo(function BusStopMarker({
   stop,
   position,
@@ -187,11 +222,14 @@ const BusStopMarker = memo(function BusStopMarker({
   onStopClick,
 }: BusStopMarkerProps) {
   const showBadges = showRouteBadges && enabledRouteIdsAtStop.length > 0;
+  const icon = showBadges
+    ? BUS_STOP_ICON_INVISIBLE
+    : getBusStopIcon(isSelected, isSaved, isDisabled);
 
   return (
     <Marker
       position={position}
-      icon={getBusStopIcon(isSelected, isSaved, isDisabled)}
+      icon={icon}
       eventHandlers={{
         click: () => onStopClick(stop),
       }}
@@ -200,29 +238,35 @@ const BusStopMarker = memo(function BusStopMarker({
       {showBadges && (
         <Tooltip
           permanent
-          direction="right"
-          offset={[14, 0]}
+          direction="center"
           className="route-badge-tooltip"
         >
-          <div className="flex items-center gap-1 pointer-events-none">
-            {enabledRouteIdsAtStop.map((routeId) => (
-              <Badge
-                key={routeId}
-                variant="secondary"
-                className={
-                  routeId.endsWith('M')
-                    ? 'border border-transparent dark:border-white/80'
-                    : ''
-                }
-                style={{
-                  backgroundColor: `var(--route-${routeId}, var(--muted))`,
-                  color: `var(--route-text-${routeId}, var(--foreground))`,
-                  borderColor: 'transparent',
-                }}
-              >
-                {routeId}
-              </Badge>
-            ))}
+          <div className="bus-stop-marker-badges-group">
+            <div
+              className="bus-stop-marker-dot"
+              style={getDotStyle(isSelected, isSaved, isDisabled)}
+              aria-hidden
+            />
+            <div className="flex items-center gap-1 pointer-events-none">
+              {enabledRouteIdsAtStop.map((routeId) => (
+                <Badge
+                  key={routeId}
+                  variant="secondary"
+                  className={
+                    routeId.endsWith('M')
+                      ? 'border border-transparent dark:border-white/80'
+                      : ''
+                  }
+                  style={{
+                    backgroundColor: `var(--route-${routeId}, var(--muted))`,
+                    color: `var(--route-text-${routeId}, var(--foreground))`,
+                    borderColor: 'transparent',
+                  }}
+                >
+                  {routeId}
+                </Badge>
+              ))}
+            </div>
           </div>
         </Tooltip>
       )}
