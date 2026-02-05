@@ -9,6 +9,11 @@ const SAVED_STOPS_STORAGE_KEY = 'travel-porto-saved-stops';
 const SAVED_ROUTES_STORAGE_KEY = 'travel-porto-saved-routes';
 
 let cachedStopToRouteIds: Map<string, Set<string>> | null = null;
+let cachedStopToRouteDirectionIds: Map<string, Set<string>> | null = null;
+
+export function routeDirectionKey(routeId: string, directionId: number): string {
+  return `${routeId}:${directionId}`;
+}
 
 function loadSavedStops(): BusStop[] {
   try {
@@ -74,6 +79,7 @@ interface MapContextType {
   enabledRouteIds: EnabledRouteIds;
   setEnabledRouteIds: (value: EnabledRouteIds | ((prev: EnabledRouteIds) => EnabledRouteIds)) => void;
   stopToRouteIds: Map<string, Set<string>>;
+  stopToRouteDirectionIds: Map<string, Set<string>>;
   loadStopToRouteIds: () => void;
   stopToRouteIdsLoading: boolean;
 }
@@ -104,6 +110,12 @@ export function MapProvider({ children }: { children: ReactNode }) {
     }
     return new Map();
   });
+  const [stopToRouteDirectionIds, setStopToRouteDirectionIds] = useState<Map<string, Set<string>>>(() => {
+    if (cachedStopToRouteDirectionIds) {
+      return new Map([...cachedStopToRouteDirectionIds].map(([k, v]) => [k, new Set(v)]));
+    }
+    return new Map();
+  });
   const [stopToRouteIdsLoading, setStopToRouteIdsLoading] = useState(false);
 
   // Fetch stops for each route on app load, limiting concurrent requests
@@ -119,25 +131,31 @@ export function MapProvider({ children }: { children: ReactNode }) {
         );
         return runWithConcurrency(tasks, CONCURRENCY).then((results) => {
           const allStops = new Map<string, Set<string>>();
+          const allStopsByDirection = new Map<string, Set<string>>();
           results.forEach((data, i) => {
             if (!data || i >= routes.length) return;
             const route = routes[i];
             (data.directions ?? []).forEach((dir) => {
+              const key = routeDirectionKey(route.id, dir.direction_id);
               (dir.stops ?? []).forEach((s) => {
                 const stopId = s.stop?.id;
                 if (stopId) {
                   if (!allStops.has(stopId)) allStops.set(stopId, new Set());
                   allStops.get(stopId)!.add(route.id);
+                  if (!allStopsByDirection.has(stopId)) allStopsByDirection.set(stopId, new Set());
+                  allStopsByDirection.get(stopId)!.add(key);
                 }
               });
             });
           });
-          return allStops;
+          return { byRoute: allStops, byDirection: allStopsByDirection };
         });
       })
-      .then((map) => {
-        cachedStopToRouteIds = new Map([...map].map(([k, v]) => [k, new Set(v)]));
-        setStopToRouteIds(new Map([...map].map(([k, v]) => [k, new Set(v)])));
+      .then(({ byRoute, byDirection }) => {
+        cachedStopToRouteIds = new Map([...byRoute].map(([k, v]) => [k, new Set(v)]));
+        setStopToRouteIds(new Map([...byRoute].map(([k, v]) => [k, new Set(v)])));
+        cachedStopToRouteDirectionIds = new Map([...byDirection].map(([k, v]) => [k, new Set(v)]));
+        setStopToRouteDirectionIds(new Map([...byDirection].map(([k, v]) => [k, new Set(v)])));
       })
       .catch(() => {})
       .finally(() => {
@@ -148,6 +166,9 @@ export function MapProvider({ children }: { children: ReactNode }) {
   const loadStopToRouteIds = useCallback(() => {
     if (cachedStopToRouteIds !== null) {
       setStopToRouteIds(new Map([...cachedStopToRouteIds].map(([k, v]) => [k, new Set(v)])));
+    }
+    if (cachedStopToRouteDirectionIds !== null) {
+      setStopToRouteDirectionIds(new Map([...cachedStopToRouteDirectionIds].map(([k, v]) => [k, new Set(v)])));
     }
   }, []);
 
@@ -202,7 +223,7 @@ export function MapProvider({ children }: { children: ReactNode }) {
         savedRoutes, addSavedRoute, removeSavedRoute, isSavedRoute,
         requestLocation, setRequestLocation,
         enabledRouteIds, setEnabledRouteIds,
-        stopToRouteIds, loadStopToRouteIds, stopToRouteIdsLoading,
+        stopToRouteIds, stopToRouteDirectionIds, loadStopToRouteIds, stopToRouteIdsLoading,
       }}
     >
       {children}
