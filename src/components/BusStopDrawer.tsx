@@ -5,6 +5,7 @@ import { Toggle } from './ui/toggle';
 import { X, Locate, LocateFixed, Clock, Bookmark } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useMapContext } from '../contexts/MapContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useTranslation } from '../lib/i18n';
 import type {
   BusStop,
@@ -18,6 +19,7 @@ import {
 } from '../api/endpoints/stops';
 import { fetchRoutes, fetchRouteShapes } from '../api/endpoints/routes';
 import { centerMap } from '../lib/map';
+import { drawRouteShape } from '../lib/routeShapes';
 import { toHex } from '../lib/utils';
 import L from 'leaflet';
 
@@ -37,6 +39,7 @@ export default function BusStopDrawer({
 }: BusStopDrawerProps) {
   const { language } = useLanguage();
   const t = useTranslation(language);
+  const { theme } = useTheme();
   const { addSavedStop, removeSavedStop, isSavedStop, enabledRouteIds } = useMapContext();
 
   const isRouteGloballyEnabled = (routeId: string) =>
@@ -214,36 +217,21 @@ export default function BusStopDrawer({
           if (cancelled || !mapInstance) return;
           const route = routeById.get(route_id);
           const color = toHex(route?.route_color ?? '#000000');
+          const whiteOutline = theme === 'dark' && route_id.endsWith('M');
           for (const shape of shapes) {
             if (cancelled || !mapInstance) break;
-            const sorted = [...(shape.points ?? [])].sort((a, b) => a.sequence - b.sequence);
-            const latlngs: [number, number][] = sorted.map((p) => [
-              p.coordinates.latitude,
-              p.coordinates.longitude,
-            ]);
-            if (latlngs.length < 2) continue;
-            const polyline = L.polyline(latlngs, {
+            const result = drawRouteShape(mapInstance, shape, {
               color,
-              weight: 5,
-              opacity: 0.9,
-            }).addTo(mapInstance);
-            routeShapeLayersRef.current.push(polyline);
-            if (isDebug) {
-              for (const [lat, lng] of latlngs) {
-                const marker = L.circleMarker([lat, lng], {
-                  radius: 4,
-                  fillColor: color,
-                  color: '#fff',
-                  weight: 1,
-                  opacity: 1,
-                  fillOpacity: 0.9,
-                }).addTo(mapInstance);
-                shapePointMarkersRef.current.push(marker);
-              }
+              debug: isDebug,
+              whiteOutline,
+            });
+            if (result) {
+              if (result.outlinePolyline) routeShapeLayersRef.current.push(result.outlinePolyline);
+              routeShapeLayersRef.current.push(result.polyline);
+              shapePointMarkersRef.current.push(...result.markers);
             }
           }
         } catch {
-          // ignore per-route errors
         }
       });
 
@@ -269,6 +257,7 @@ export default function BusStopDrawer({
     realtimeArrivals,
     enabledRoutes,
     isDebug,
+    theme,
   ]);
 
   const handleReCenter = () => {
