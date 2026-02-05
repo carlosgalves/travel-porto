@@ -238,10 +238,26 @@ const BusStopMarker = memo(function BusStopMarker({
       {showBadges && (
         <Tooltip
           permanent
-          direction="center"
+          direction="right"
+          offset={[-10, 0]}
           className="route-badge-tooltip"
         >
-          <div className="bus-stop-marker-badges-group">
+          <div
+            className="bus-stop-marker-badges-group"
+            role="button"
+            tabIndex={0}
+            onClick={(e) => {
+              e.stopPropagation();
+              onStopClick(stop);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                onStopClick(stop);
+              }
+            }}
+          >
             <div
               className="bus-stop-marker-dot"
               style={getDotStyle(isSelected, isSaved, isDisabled)}

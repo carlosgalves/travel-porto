@@ -80,6 +80,7 @@
   box-shadow: none !important;
   padding: 0 !important;
   margin: 0 !important;
+  pointer-events: auto !important;
 }
 
 .route-badge-tooltip.leaflet-tooltip-left::before,
@@ -98,6 +99,7 @@
   border: 1px solid var(--border);
   border-radius: 9999px; /* match badge rounded-full */
   box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+  cursor: pointer;
 }
 
 .bus-stop-marker-dot {
