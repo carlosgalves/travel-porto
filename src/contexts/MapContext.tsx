@@ -1,11 +1,14 @@
-import { createContext, useCallback, useContext, useEffect, useState, useRef } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import type L from 'leaflet';
 import type { BusStop, Route } from '../api/types';
 import { fetchRoutes, fetchRouteStopsAll } from '../api/endpoints/routes';
+import { runWithConcurrency, withRetry } from '../lib/async';
 
 const SAVED_STOPS_STORAGE_KEY = 'travel-porto-saved-stops';
 const SAVED_ROUTES_STORAGE_KEY = 'travel-porto-saved-routes';
+
+let cachedStopToRouteIds: Map<string, Set<string>> | null = null;
 
 function loadSavedStops(): BusStop[] {
   try {
@@ -95,45 +98,58 @@ export function MapProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const [stopToRouteIds, setStopToRouteIds] = useState<Map<string, Set<string>>>(() => new Map());
+  const [stopToRouteIds, setStopToRouteIds] = useState<Map<string, Set<string>>>(() => {
+    if (cachedStopToRouteIds) {
+      return new Map([...cachedStopToRouteIds].map(([k, v]) => [k, new Set(v)]));
+    }
+    return new Map();
+  });
   const [stopToRouteIdsLoading, setStopToRouteIdsLoading] = useState(false);
-  const stopToRouteIdsLoadedRef = useRef(false);
 
-  const loadStopToRouteIds = useCallback(() => {
-    if (stopToRouteIdsLoadedRef.current || stopToRouteIdsLoading) return;
-    stopToRouteIdsLoadedRef.current = true;
+  // Fetch stops for each route on app load, limiting concurrent requests
+  const CONCURRENCY = 3;
+
+  useEffect(() => {
+    if (cachedStopToRouteIds !== null) return;
     setStopToRouteIdsLoading(true);
     fetchRoutes()
       .then((routes) => {
-        const allStops = new Map<string, Set<string>>();
-        return Promise.all(
-          routes.map((route) =>
-            fetchRouteStopsAll(route.id)
-              .then((data) => {
-                (data.directions ?? []).forEach((dir) => {
-                  (dir.stops ?? []).forEach((s) => {
-                    const stopId = s.stop?.id;
-                    if (stopId) {
-                      if (!allStops.has(stopId)) allStops.set(stopId, new Set());
-                      allStops.get(stopId)!.add(route.id);
-                    }
-                  });
-                });
-              })
-              .catch(() => {})
-          )
-        ).then(() => allStops);
+        const tasks = routes.map(
+          (route) => () => withRetry(() => fetchRouteStopsAll(route.id), Infinity) // retry until success
+        );
+        return runWithConcurrency(tasks, CONCURRENCY).then((results) => {
+          const allStops = new Map<string, Set<string>>();
+          results.forEach((data, i) => {
+            if (!data || i >= routes.length) return;
+            const route = routes[i];
+            (data.directions ?? []).forEach((dir) => {
+              (dir.stops ?? []).forEach((s) => {
+                const stopId = s.stop?.id;
+                if (stopId) {
+                  if (!allStops.has(stopId)) allStops.set(stopId, new Set());
+                  allStops.get(stopId)!.add(route.id);
+                }
+              });
+            });
+          });
+          return allStops;
+        });
       })
       .then((map) => {
-        setStopToRouteIds(new Map(map));
+        cachedStopToRouteIds = new Map([...map].map(([k, v]) => [k, new Set(v)]));
+        setStopToRouteIds(new Map([...map].map(([k, v]) => [k, new Set(v)])));
       })
-      .catch(() => {
-        stopToRouteIdsLoadedRef.current = false;
-      })
+      .catch(() => {})
       .finally(() => {
         setStopToRouteIdsLoading(false);
       });
-  }, [stopToRouteIdsLoading]);
+  }, []);
+
+  const loadStopToRouteIds = useCallback(() => {
+    if (cachedStopToRouteIds !== null) {
+      setStopToRouteIds(new Map([...cachedStopToRouteIds].map(([k, v]) => [k, new Set(v)])));
+    }
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(SAVED_STOPS_STORAGE_KEY, JSON.stringify(savedStops));
