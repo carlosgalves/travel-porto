@@ -11,7 +11,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['vite.svg'],
+      includeAssets: ['travel-porto-full.svg'],
       manifest: {
         name: 'Travel Porto',
         short_name: 'Travel Porto',
@@ -24,7 +24,7 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: '/vite.svg',
+            src: '/travel-porto-full.svg',
             sizes: 'any',
             type: 'image/svg+xml',
             purpose: 'any',

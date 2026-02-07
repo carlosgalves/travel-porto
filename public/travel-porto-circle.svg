@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_5" data-name="Layer 5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #3f6fc8;
+      }
+
+      .cls-1, .cls-2, .cls-3, .cls-4 {
+        stroke-miterlimit: 10;
+        stroke-width: 24px;
+      }
+
+      .cls-1, .cls-5 {
+        stroke: #da8726;
+      }
+
+      .cls-2 {
+        fill: #82e6c9;
+        stroke: #efe020;
+      }
+
+      .cls-6, .cls-3 {
+        stroke: #3f6fc8;
+      }
+
+      .cls-6, .cls-7, .cls-8, .cls-5 {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 49px;
+      }
+
+      .cls-3 {
+        fill: #efe020;
+      }
+
+      .cls-4 {
+        fill: #da8726;
+      }
+
+      .cls-4, .cls-7 {
+        stroke: #82e6c9;
+      }
+
+      .cls-8 {
+        stroke: #f9ff00;
+      }
+    </style>
+  </defs>
+  <path class="cls-5" d="M74.75,247.69c0-94.02,76.22-170.24,170.24-170.24"/>
+  <path class="cls-7" d="M74.75,247.38c0,94.02,76.22,170.24,170.24,170.24"/>
+  <path class="cls-8" d="M415.24,247.38c0,94.02-76.22,170.24-170.24,170.24"/>
+  <path class="cls-6" d="M415.24,247.38c0-94.02-76.22-170.24-170.24-170.24"/>
+  <circle class="cls-2" cx="245" cy="420.24" r="52.85"/>
+  <circle class="cls-4" cx="74.75" cy="250" r="52.85"/>
+  <circle class="cls-3" cx="415.24" cy="250" r="52.85"/>
+  <circle class="cls-1" cx="245" cy="81.44" r="52.85"/>
+</svg>
