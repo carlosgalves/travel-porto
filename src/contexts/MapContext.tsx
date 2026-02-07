@@ -82,6 +82,8 @@ interface MapContextType {
   stopToRouteDirectionIds: Map<string, Set<string>>;
   loadStopToRouteIds: () => void;
   stopToRouteIdsLoading: boolean;
+  stopsLoaded: boolean;
+  setStopsLoaded: (loaded: boolean) => void;
 }
 
 const MapContext = createContext<MapContextType | undefined>(undefined);
@@ -116,7 +118,8 @@ export function MapProvider({ children }: { children: ReactNode }) {
     }
     return new Map();
   });
-  const [stopToRouteIdsLoading, setStopToRouteIdsLoading] = useState(false);
+  const [stopToRouteIdsLoading, setStopToRouteIdsLoading] = useState(() => cachedStopToRouteIds === null);
+  const [stopsLoaded, setStopsLoaded] = useState(false);
 
   // Fetch stops for each route on app load, limiting concurrent requests
   const CONCURRENCY = 3;
@@ -224,6 +227,7 @@ export function MapProvider({ children }: { children: ReactNode }) {
         requestLocation, setRequestLocation,
         enabledRouteIds, setEnabledRouteIds,
         stopToRouteIds, stopToRouteDirectionIds, loadStopToRouteIds, stopToRouteIdsLoading,
+        stopsLoaded, setStopsLoaded,
       }}
     >
       {children}

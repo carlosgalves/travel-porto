@@ -12,6 +12,7 @@ import BusStops from './BusStops';
 import RouteFilterLines from './RouteFilterLines';
 import type { BusStop } from '../../api/types';
 import BusStopDrawer from '../BusStopDrawer';
+import { Loading } from '../Loading';
 import { centerMap } from '../../lib/map';
 import { createUserLocationIcon } from './UserMarker';
 import { Alert, AlertDescription } from '../ui/alert';
@@ -97,7 +98,7 @@ export default function Map({ className }: MapProps) {
   const { theme } = useTheme();
   const { language } = useLanguage();
   const t = useTranslation(language);
-  const { mapInstance, setMapInstance, setUserPosition, setHasLocationPermission, setIsCenteredOnUser, userPosition, setRequestLocation } = useMapContext();
+  const { mapInstance, setMapInstance, setUserPosition, setHasLocationPermission, setIsCenteredOnUser, userPosition, setRequestLocation, stopsLoaded, stopToRouteIdsLoading } = useMapContext();
   const [position, setPosition] = useState<[number, number] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ErrorType>(null);
@@ -286,15 +287,18 @@ export default function Map({ className }: MapProps) {
   const isGpsError = (e: ErrorType): boolean =>
     e === 'locationError' || e === 'geolocationNotSupported';
 
+  const appLoading = loading || !stopsLoaded || stopToRouteIdsLoading;
+  const loadingMessage = loading
+    ? t('map.loading')
+    : !stopsLoaded
+      ? t('map.loadingStops')
+      : t('map.loadingRoutes');
+  const loadingSubline = loading ? t('map.gettingLocation') : null;
+
   return (
     <div className={className || 'w-full h-full'} style={{ position: 'relative', zIndex: 1 }}>
-      {loading && (
-        <div className="absolute inset-0 z-[200] flex items-center justify-center bg-background/60 backdrop-blur-[2px]">
-          <div className="text-center rounded-lg border border-border bg-background/95 px-4 py-3 shadow-lg">
-            <p className="text-lg font-medium">{t('map.loading')}</p>
-            <p className="text-sm text-muted-foreground">{t('map.gettingLocation')}</p>
-          </div>
-        </div>
+      {appLoading && (
+        <Loading message={loadingMessage} subline={loadingSubline} />
       )}
       {!position && !loading && (
         <div className="absolute inset-0 z-[200] flex items-center justify-center bg-background/60 backdrop-blur-[2px]">

@@ -10,6 +10,8 @@
   "map": {
     "loading": "A carregar o mapa...",
     "gettingLocation": "A obter a  localização...",
+    "loadingStops": "A carregar paragens...",
+    "loadingRoutes": "A carregar linhas...",
     "unableToLoad": "Não foi possível carregar o mapa"
   },
   "busStop": {

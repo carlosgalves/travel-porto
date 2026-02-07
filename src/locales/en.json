@@ -10,6 +10,8 @@
   "map": {
     "loading": "Loading map...",
     "gettingLocation": "Getting your location...",
+    "loadingStops": "Loading stops...",
+    "loadingRoutes": "Loading routes...",
     "unableToLoad": "Unable to load map"
   },
   "busStop": {

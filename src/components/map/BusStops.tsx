@@ -297,7 +297,7 @@ interface BusStopsProps {
 }
 
 export default function BusStops({ onStopClick, selectedStopId, urlStopId }: BusStopsProps) {
-  const { savedStops, enabledRouteIds, stopToRouteIds } = useMapContext();
+  const { savedStops, enabledRouteIds, stopToRouteIds, setStopsLoaded } = useMapContext();
   const savedStopIds = useMemo(() => new Set(savedStops.map((s) => s.id)), [savedStops]);
 
   const disabledStopIds = useMemo(() => {
@@ -346,13 +346,15 @@ export default function BusStops({ onStopClick, selectedStopId, urlStopId }: Bus
       .then((data) => {
         setStops(data);
         setLoading(false);
+        setStopsLoaded(true);
       })
       .catch((err) => {
         console.error('Failed to load bus stops:', err);
         setError('Failed to load bus stops');
         setLoading(false);
+        setStopsLoaded(true);
       });
-  }, []);
+  }, [setStopsLoaded]);
 
   useEffect(() => {
     if (!urlStopId || stops.length === 0 || selectedStopId === urlStopId) return;

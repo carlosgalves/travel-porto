@@ -10,6 +10,8 @@ type TranslationKey =
   | 'header.dark'
   | 'map.loading'
   | 'map.gettingLocation'
+  | 'map.loadingStops'
+  | 'map.loadingRoutes'
   | 'map.unableToLoad'
   | 'busStop.title'
   | 'busStop.arrivalNow'
